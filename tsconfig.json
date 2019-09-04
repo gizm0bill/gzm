@@ -17,6 +17,14 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "ng-rest-client": [
+        "dist/ng-rest-client"
+      ],
+      "ng-rest-client/*": [
+        "dist/ng-rest-client/*"
+      ]
+    }
   }
 }
