@@ -1,12 +1,12 @@
 /// <reference path="typings.d.ts" />
 
 import { Inject, Component, TypeDecorator } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders, HttpRequest,  } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders, HttpRequest, HttpEvent,  } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { switchMap, catchError, takeLast, shareReplay, share } from 'rxjs/operators';
 
 const Reflect = global['Reflect'];
-const cacheMap = new Map;
+const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
 
 function isObject( item )
 {
@@ -199,9 +199,6 @@ const methodDecoratorFactory = ( method: string ) =>
           cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, headers.getAll( name ).join() ) );
           return [cacheUrl, headerArr.join(), cacheQuery, cacheResponseType].join();
         };
-        // get baseUrl from Promise, file or simple string
-        // const baseUrlObs = this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of('');
-        // let requestObj: Request;
 
         const errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
         let requestObject: HttpRequest<any>;
@@ -210,56 +207,45 @@ const methodDecoratorFactory = ( method: string ) =>
           switchMap( baseUrl =>
           {
             requestObject = new HttpRequest( method, requestUrl, { body, headers, params } );
-            let
-              returnRequest: Observable<any>,
-              cacheMapKey: string;
+            let returnRequest: Observable<HttpEvent<any>>;
             // check if we got a cache meta and entry
             const cacheOptions: ICacheOptions = Reflect.getOwnMetadata( MetadataKeys.Cache, target, targetKey );
             if ( cacheOptions )
             {
-              switch ( true )
+              const
+                cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params ), // , responseType ),
+                cacheMapEntry = cacheMap.get( cacheMapKey );
+              // debugger;
+              if ( cacheMapEntry ) switch ( true )
               {
-                case !!cacheOptions.until:
-                  cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params ); // , responseType ),
-                  const cacheMapEntry = cacheMap.get( cacheMapKey );
-                  if ( cacheMapEntry &&  ( +new Date ) < cacheMapEntry[0] + cacheOptions.until )
-                  {
-                    returnRequest = cacheMapEntry[1];
-                    break;
-                  }
-                  returnRequest = this.http.request( requestObject ).pipe( shareReplay() );
-                  cacheMap.set( cacheMapKey, [ returnRequest, cacheOptions ] );
+                case !!cacheOptions.until && ( +new Date ) < cacheMapEntry[1].until:
+                  [ returnRequest ] = cacheMapEntry;
                   break;
-                // case !!cacheOptions.times
+                case !!cacheOptions.times && cacheMapEntry[1].times > 0:
+                  cacheMapEntry[1].times--; // decrease called times
+                  cacheMap.set( cacheMapKey, [ returnRequest, cacheMapEntry[1] ] );
+                  [ returnRequest ] = cacheMapEntry;
+                  break;
+              }
+              if ( !returnRequest ) // first cache request
+              {
+                returnRequest = this.http.request( requestObject ).pipe( shareReplay() );
+                const saveCacheOptions = extend( extend( {}, cacheOptions ),
+                {
+                  // set expiration time for cache if any
+                  until: cacheOptions.until && ( +new Date ) + cacheOptions.until,
+                } as ICacheOptions );
+                cacheMap.set( cacheMapKey, [ returnRequest, saveCacheOptions ] );
               }
             }
-            else returnRequest = this.http.request( requestObject ).pipe( share() );
-            // const cacheTime = Reflect.getOwnMetadata( MetadataKeys.Cache, target, targetKey );
-            // if ( cacheTime )
-            // {
-            //   const cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, query, responseType ),
-            //         cacheMapEntry = cacheMap.get(cacheMapKey);
-            //   if ( cacheMapEntry &&  ( +new Date ) < cacheMapEntry[0] + cacheTime ) observable = cacheMapEntry[1];
-            //   else
-            //   {
-            //     requestObj = makeReq(method, baseUrl, requestUrl, headers, body, query, responseType);
-            //     observable = <Observable<Response>> this.http.request( requestObj ).shareReplay();
-            //     cacheMap.set( cacheMapKey, [ +new Date, observable ] );
-            //   }
-            // }
-            // else
-            // {
-            //   requestObj = makeReq(method, baseUrl, requestUrl, headers, body, query, responseType);
-            //   // observable request
-            //   observable = <Observable<Response>> this.http.request( requestObj ).share();
-            // }
-            // return observable;
+            else returnRequest = ( this.http as HttpClient ).request( requestObject ).pipe( share() );
+
             return returnRequest;
           } ),
           takeLast( 1 ),
           catchError( ( error, caught ) => {
-            console.log( requestObject );
-            debugger;
+            // console.log( requestObject );
+            // debugger;
             return errorHandler
               ? errorHandler.bind( target, error, caught, /*requestObj*/ ).call()
               : throwError( error );
@@ -282,6 +268,8 @@ export interface ICacheOptions {
   clearMethodPrefix: string;
 }
 // method decorator
+// TODO: add until date
+// TODO: add each times
 export function Cache( options?: number | string | ICacheOptions ): MethodDecorator
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
@@ -291,7 +279,7 @@ export function Cache( options?: number | string | ICacheOptions ): MethodDecora
         cacheOptions.until = options as number;
         break;
     case typeof options === 'string' && options.lastIndexOf( 'times' ) > 0:
-        cacheOptions.times = options as number;
+        cacheOptions.times = parseInt( options as string, 10 );
         break;
     case typeof options === 'string': // just try to parse some timestamp
         cacheOptions.until = parseInt( options as string, 10 );
