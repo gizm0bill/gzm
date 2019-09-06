@@ -162,7 +162,7 @@ const buildBody = ( target, targetKey, args ) =>
 
 const handleCache = () =>
 {
-}
+};
 
 // build method decorators
 const methodDecoratorFactory = ( method: string ) =>
@@ -201,7 +201,7 @@ const methodDecoratorFactory = ( method: string ) =>
         const getCacheKey = ( cacheUrl: string, cacheHeaders: HttpHeaders, cacheQuery: any, cacheResponseType?: any ) =>
         {
           const headerArr = [];
-          cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, headers.getAll( name ).join() ) );
+          cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, cacheHeaders.getAll( name ).join() ) );
           return [cacheUrl, headerArr.join(), cacheQuery, cacheResponseType].join();
         };
 
@@ -271,16 +271,22 @@ const methodDecoratorFactory = ( method: string ) =>
   };
 };
 
-type MethodDecorator = ( target: Object, targetKey?: string | symbol ) => void;
+export const Error = ( handler: ( ...args: any[] ) => any ) =>
+  <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): TClass =>
+    Reflect.defineMetadata( MetadataKeys.Error, handler, target );
+
+export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDecorator =>
+  ( target: Object, targetKey?: string | symbol ): void =>
+    Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
+
 export interface ICacheOptions {
   until?: number;
   times?: number;
   clearMethodPrefix: string;
 }
-// method decorator
 // TODO: add until date
 // TODO: add each times
-export function Cache( options?: number | string | ICacheOptions ): MethodDecorator
+export const Cache = ( options?: number | string | ICacheOptions ): MethodDecorator =>
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
   switch ( true )
@@ -301,7 +307,7 @@ export function Cache( options?: number | string | ICacheOptions ): MethodDecora
           cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
         break;
   }
-  return function decorator( target: Object, targetKey?: string | symbol ): void
+  return ( target: Object, targetKey?: string | symbol ): void =>
   {
     const targetKeyString = targetKey.toString();
     Object.defineProperty( target,
@@ -317,7 +323,7 @@ export function Cache( options?: number | string | ICacheOptions ): MethodDecora
     Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
     Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
   };
-}
+};
 
 // define param decorators
 export const Path = paramDecoratorFactory( 'Path' );

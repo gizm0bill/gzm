@@ -1,7 +1,7 @@
 import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Cache, GET } from '.';
+import { AbstractApiClient, Cache, GET, Error } from '.';
 import { Observable } from 'rxjs';
 
 describe( 'ng-rest-client', () =>
