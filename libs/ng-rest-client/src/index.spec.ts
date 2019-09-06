@@ -20,8 +20,11 @@ describe( 'ng-rest-client', () =>
   {
     @GET( GET_CACHE_URL ) @Cache( CACHE_UNTIL )
     testCacheUntil(): Observable<any> { return; }
+    clearCacheTestCacheUntil() { return this; }
+
     @GET( GET_CACHE_URL ) @Cache( `${CACHE_TIMES}times` )
     testCacheTimes(): Observable<any> { return; }
+    clearCacheTestCacheTimes() { return this; }
   }
 
   beforeEach( () =>
@@ -69,6 +72,22 @@ describe( 'ng-rest-client', () =>
     expect( requests2.length ).toEqual( 1 );
     requests2[0].flush( someTestData );
   } ) );
+
+  it( 'should clear cache imperatively', fakeAsync( inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    apiClient.testCacheUntil().subscribe( expectSomeTestData );
+    tick( CACHE_UNTIL / 2 );
+    // trigger a cache clear
+    apiClient.clearCacheTestCacheUntil().testCacheUntil().subscribe( expectSomeTestData );
+    const requests = httpTestingController.match( GET_CACHE_URL );
+    expect( requests.length ).toEqual( 2 );
+    requests.forEach( request => request.flush( someTestData ) );
+    // and start caching again
+    tick( CACHE_UNTIL / 2 );
+    apiClient.testCacheUntil().subscribe( expectSomeTestData );
+    const requests2 = httpTestingController.match( GET_CACHE_URL );
+    expect( requests2.length ).toEqual( 0 );
+  } ) ) );
 
   afterEach( () => httpTestingController.verify() );
 } );

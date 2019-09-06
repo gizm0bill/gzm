@@ -42,7 +42,8 @@ const MetadataKeys =
   Header: Symbol( 'apiClient:Header' ),
   Type: Symbol( 'apiClient:ResponseType' ),
   Error: Symbol( 'apiClient:Error' ),
-  Cache: Symbol( 'apiClient:Cache' )
+  Cache: Symbol( 'apiClient:Cache' ),
+  ClearCache: Symbol( 'apiClient:ClearCache' ),
 };
 
 const paramDecoratorFactory = ( paramDecoName: string ) =>
@@ -159,6 +160,10 @@ const buildBody = ( target, targetKey, args ) =>
   return body;
 };
 
+const handleCache = () =>
+{
+}
+
 // build method decorators
 const methodDecoratorFactory = ( method: string ) =>
 {
@@ -214,8 +219,13 @@ const methodDecoratorFactory = ( method: string ) =>
             {
               const
                 cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params ), // , responseType ),
-                cacheMapEntry = cacheMap.get( cacheMapKey );
-              // debugger;
+                shouldClearCache = Reflect.getOwnMetadata( MetadataKeys.ClearCache, target, targetKey );
+              if ( shouldClearCache )
+              {
+                cacheMap.delete( cacheMapKey );
+                Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
+              }
+              const cacheMapEntry = cacheMap.get( cacheMapKey );
               if ( cacheMapEntry ) switch ( true )
               {
                 case !!cacheOptions.until && ( +new Date ) < cacheMapEntry[1].until:
@@ -298,8 +308,13 @@ export function Cache( options?: number | string | ICacheOptions ): MethodDecora
       `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
       {
         writable: false,
-        value: () => { /* TODO: implement clear cache */ return; }
+        value: function()
+        {
+          Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
+          return this;
+        }
     } );
+    Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
     Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
   };
 }
