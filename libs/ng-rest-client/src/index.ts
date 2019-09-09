@@ -2,7 +2,7 @@
 
 import { Inject, Component, TypeDecorator } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders, HttpRequest, HttpEvent,  } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, from } from 'rxjs';
 import { switchMap, catchError, takeLast, shareReplay, share } from 'rxjs/operators';
 
 const Reflect = global['Reflect'];
@@ -191,13 +191,8 @@ const methodDecoratorFactory = ( method: string ) =>
         const body = buildBody( target, targetKey, args );
 
         // handle @Type
-        // let responseType = Reflect.getOwnMetadata(MetadataKeys.Type, target, targetKey);
+        const responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey );
 
-        // const makeReq = ( method, baseUrl, requestUrl, headers, body, query, responseType ) =>
-        // {
-        //   const options = new RequestOptions({ method, url: baseUrl + requestUrl, headers, body, search: query, responseType });
-        //   return new Request(options);
-        // },
         const getCacheKey = ( cacheUrl: string, cacheHeaders: HttpHeaders, cacheQuery: any, cacheResponseType?: any ) =>
         {
           const headerArr = [];
@@ -211,14 +206,14 @@ const methodDecoratorFactory = ( method: string ) =>
         (
           switchMap( baseUrl =>
           {
-            requestObject = new HttpRequest( method, requestUrl, { body, headers, params } );
+            requestObject = new HttpRequest( method, requestUrl, { body, headers, params, responseType } );
             let returnRequest: Observable<HttpEvent<any>>;
             // check if we got a cache meta and entry
             const cacheOptions: ICacheOptions = Reflect.getOwnMetadata( MetadataKeys.Cache, target, targetKey );
             if ( cacheOptions )
             {
               const
-                cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params ), // , responseType ),
+                cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params, responseType ),
                 shouldClearCache = Reflect.getOwnMetadata( MetadataKeys.ClearCache, target, targetKey );
               if ( shouldClearCache )
               {
@@ -240,11 +235,8 @@ const methodDecoratorFactory = ( method: string ) =>
               if ( !returnRequest ) // first cache request
               {
                 returnRequest = this.http.request( requestObject ).pipe( shareReplay() );
-                const saveCacheOptions = extend( extend( {}, cacheOptions ),
-                {
-                  // set expiration time for cache if any
-                  until: cacheOptions.until && ( +new Date ) + cacheOptions.until,
-                } as ICacheOptions );
+                const saveCacheOptions = extend( {}, cacheOptions );
+                saveCacheOptions.until = cacheOptions.until && ( +new Date ) + cacheOptions.until;
                 cacheMap.set( cacheMapKey, [ returnRequest, saveCacheOptions ] );
               }
             }
@@ -270,6 +262,85 @@ const methodDecoratorFactory = ( method: string ) =>
     };
   };
 };
+
+
+/**
+ * class decorator
+ *
+ * @param url - will use this exact string as BaseUrl, unless `configKey` is passed; function - will get assigned to protorype.getBaseUrl
+ * @param configKey - will request `url` and get this key from the resulting json
+ */
+export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | string, configKey?: string )
+{
+  return function <TClass extends { new ( ...args: any[] ): AbstractApiClient }>
+  ( Target: TClass ): TClass
+  {
+    if ( url instanceof Function ) Target.prototype.getBaseUrl = url;
+    // request from external
+    else if ( configKey )
+    {
+      let cached;
+      Target.prototype.getBaseUrl = function()
+      {
+        const x = !cached ? ( cached = this.http.get( url ).map( r => r.json()[configKey] ).share() ) : cached;
+        return x;
+      };
+    }
+    else Target.prototype.getBaseUrl = () => from( Promise.resolve( url ) );
+    return Target;
+  };
+}
+
+/**
+ * class decorator
+ * method decorator
+ */
+export function Headers( headers: {} )
+{
+  function decorator <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): void;
+  function decorator( target: Object, targetKey: string | symbol ): void;
+  function decorator( target: Object, targetKey?: string | symbol ): void
+  {
+    const metadataKey = MetadataKeys.Header;
+    if ( targetKey !== undefined )
+    {
+      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
+      existingHeaders.push( { index: undefined, key: headers } );
+      Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
+    }
+    else // class type
+    {
+      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+      existingHeaders.push( { index: undefined, key: headers } );
+      Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
+    }
+  }
+  return decorator;
+}
+
+export function Query( keyOrParams: any, ...extraOptions: any[] )
+{
+  function decorator <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): void;
+  function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void;
+  function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void
+  {
+    if ( parameterIndex !== undefined ) // on param
+    {
+      const metadataKey = MetadataKeys.Query;
+      const existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
+      existingParams.push( { index: parameterIndex, key: keyOrParams, ...extraOptions } );
+      Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
+    }
+    else // on class
+    {
+      const metadataKey = MetadataKeys.Query;
+      const existingQuery: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+      existingQuery.push( { index: undefined, key: keyOrParams } );
+      Reflect.defineMetadata( metadataKey, existingQuery, target, undefined );
+    }
+  }
+  return decorator;
+}
 
 export const Error = ( handler: ( ...args: any[] ) => any ) =>
   <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): TClass =>
