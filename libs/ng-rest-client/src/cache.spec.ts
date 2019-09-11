@@ -1,7 +1,7 @@
 import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Cache, GET } from '.';
+import { AbstractApiClient, Cache, GET, CacheClear } from '.';
 import { Observable } from 'rxjs';
 
 describe( 'ng-rest-client', () =>
@@ -14,18 +14,23 @@ describe( 'ng-rest-client', () =>
 
     someTestData  = [ 'some', 'response' ],
     expectSomeTestData = ( { body }: HttpResponse<any> ) => expect( body ).toBe( someTestData );
-    ;
+
   let httpTestingController: HttpTestingController;
 
   class ApiClient extends AbstractApiClient
   {
+
+    @CacheClear<ApiClient>( 'testCacheTimes' )
+    clearCacheTestTime() { debugger; return this; }
+
+
     @GET( CACHE_URL_UNTIL ) @Cache( CACHE_UNTIL )
     testCacheUntil(): Observable<any> { return; }
-    clearCacheTestCacheUntil() { return this; }
+    // clearCacheTestCacheUntil() { return this; }
 
     @GET( CACHE_URL_TIMES ) @Cache( `${CACHE_TIMES}times` )
     testCacheTimes(): Observable<any> { return; }
-    clearCacheTestCacheTimes() { return this; }
+    // clearCacheTestCacheTimes() { return this; }
   }
 
   beforeEach( () =>
@@ -75,23 +80,28 @@ describe( 'ng-rest-client', () =>
     requests2[0].flush( someTestData );
   } ) );
 
-  it( 'should clear cache imperatively', fakeAsync( inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  // it( 'should clear cache imperatively', fakeAsync( inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  // {
+  //   tick( CACHE_UNTIL * 1000 ); // pass some time because of the previous tests messing with the clock
+  //   apiClient.testCacheUntil().subscribe( expectSomeTestData );
+  //   const request = httpTestingController.expectOne( CACHE_URL_UNTIL );
+  //   request.flush( someTestData );
+  //   tick( CACHE_UNTIL / 2 );
+  //   // trigger a cache clear
+  //   apiClient.clearCacheTestCacheUntil().testCacheUntil().subscribe( expectSomeTestData );
+  //   const request2 = httpTestingController.expectOne( CACHE_URL_UNTIL );
+  //   request2.flush( someTestData );
+  //   // and start caching again
+  //   tick( CACHE_UNTIL / 2 );
+  //   apiClient.testCacheUntil().subscribe( expectSomeTestData );
+  //   const requests3 = httpTestingController.match( CACHE_URL_UNTIL );
+  //   expect( requests3.length ).toEqual( 0 );
+  // } ) ) );
+
+  it( 'ceva', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
   {
-    tick( CACHE_UNTIL * 1000 ); // pass some time because of the previous tests messing with the clock
-    apiClient.testCacheUntil().subscribe( expectSomeTestData );
-    const request = httpTestingController.expectOne( CACHE_URL_UNTIL );
-    request.flush( someTestData );
-    tick( CACHE_UNTIL / 2 );
-    // trigger a cache clear
-    apiClient.clearCacheTestCacheUntil().testCacheUntil().subscribe( expectSomeTestData );
-    const request2 = httpTestingController.expectOne( CACHE_URL_UNTIL );
-    request2.flush( someTestData );
-    // and start caching again
-    tick( CACHE_UNTIL / 2 );
-    apiClient.testCacheUntil().subscribe( expectSomeTestData );
-    const requests3 = httpTestingController.match( CACHE_URL_UNTIL );
-    expect( requests3.length ).toEqual( 0 );
-  } ) ) );
+    apiClient.clearCacheTestTime();
+  } ) );
 
   afterEach( () => httpTestingController.verify() );
 } );

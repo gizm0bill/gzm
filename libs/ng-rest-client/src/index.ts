@@ -30,8 +30,11 @@ function extend<T, U>( target: T, source: U ): T & U
 // abstract Api class
 export abstract class AbstractApiClient
 {
+  private _testRandom = Math.random();
   constructor( @Inject( HttpClient ) protected http: HttpClient ) { }
 }
+interface DerivedAbstractApiClient { new ( ...args: any[] ): AbstractApiClient; }
+type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[keyof T];
 
 // reflect metadata key symbols
 const MetadataKeys =
@@ -272,7 +275,7 @@ const methodDecoratorFactory = ( method: string ) =>
  */
 export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | string, configKey?: string )
 {
-  return function <TClass extends { new ( ...args: any[] ): AbstractApiClient }>
+  return function <TClass extends DerivedAbstractApiClient>
   ( Target: TClass ): TClass
   {
     if ( url instanceof Function ) Target.prototype.getBaseUrl = url;
@@ -297,7 +300,7 @@ export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | str
  */
 export function Headers( headers: {} )
 {
-  function decorator <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): void;
+  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
   function decorator( target: Object, targetKey: string | symbol ): void;
   function decorator( target: Object, targetKey?: string | symbol ): void
   {
@@ -320,7 +323,7 @@ export function Headers( headers: {} )
 
 export function Query( keyOrParams: any, ...extraOptions: any[] )
 {
-  function decorator <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): void;
+  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
   function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void;
   function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void
   {
@@ -343,7 +346,7 @@ export function Query( keyOrParams: any, ...extraOptions: any[] )
 }
 
 export const Error = ( handler: ( ...args: any[] ) => any ) =>
-  <TClass extends { new ( ...args: any[] ): AbstractApiClient }>( target: TClass ): TClass =>
+  <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass =>
     Reflect.defineMetadata( MetadataKeys.Error, handler, target );
 
 export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDecorator =>
@@ -391,10 +394,22 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
           return this;
         }
     } );
-    Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
+    // Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
     Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
   };
 };
+
+export const CacheClear = <TClass extends AbstractApiClient>( targetKey: MethodNames<TClass> ) =>
+  ( target: TClass, name: MethodNames<TClass>, descriptor: TypedPropertyDescriptor<( ...args: any[] ) => any> ) =>
+  {
+    const originalValue = descriptor.value;
+    descriptor.value = function()
+    {
+      Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
+      originalValue.call( this );
+    };
+  };
+
 
 // define param decorators
 export const Path = paramDecoratorFactory( 'Path' );
