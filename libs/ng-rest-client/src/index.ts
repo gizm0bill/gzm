@@ -1,53 +1,10 @@
 /// <reference path="typings.d.ts" />
 
-import { Inject, Component, TypeDecorator } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders, HttpRequest, HttpEvent,  } from '@angular/common/http';
 import { Observable, of, throwError, from } from 'rxjs';
 import { switchMap, catchError, takeLast, shareReplay, share } from 'rxjs/operators';
-
-const Reflect = global['Reflect'];
-const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
-
-function isObject( item )
-{
-  return ( item && typeof item === 'object' && !Array.isArray( item ) && item !== null );
-}
-function extend<T, U>( target: T, source: U ): T & U
-{
-  if ( !isObject( target ) || !isObject( source ) ) return target as T & U;
-  Object.keys( source ).forEach( key =>
-  {
-    if ( isObject( source[key] ) )
-    {
-      if ( !target[key] ) Object.assign( target, { [key]: {} } );
-      extend( target[key], source[key] );
-    }
-    else Object.assign( target, { [key]: source[key] } );
-  } );
-  return target as T & U;
-}
-
-// abstract Api class
-export abstract class AbstractApiClient
-{
-  private _testRandom = Math.random();
-  constructor( @Inject( HttpClient ) protected http: HttpClient ) { }
-}
-interface DerivedAbstractApiClient { new ( ...args: any[] ): AbstractApiClient; }
-type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[keyof T];
-
-// reflect metadata key symbols
-const MetadataKeys =
-{
-  Query: Symbol( 'apiClient:Query' ),
-  Path: Symbol( 'apiClient:Path' ),
-  Body: Symbol( 'apiClient:Body' ),
-  Header: Symbol( 'apiClient:Header' ),
-  Type: Symbol( 'apiClient:ResponseType' ),
-  Error: Symbol( 'apiClient:Error' ),
-  Cache: Symbol( 'apiClient:Cache' ),
-  ClearCache: Symbol( 'apiClient:ClearCache' ),
-};
+import { extend, isObject, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
+import { cacheMap, ICacheOptions } from './cache';
 
 const paramDecoratorFactory = ( paramDecoName: string ) =>
 {
@@ -353,64 +310,6 @@ export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDec
   ( target: Object, targetKey?: string | symbol ): void =>
     Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
 
-export interface ICacheOptions {
-  until?: number;
-  times?: number;
-  clearMethodPrefix: string;
-}
-// TODO: add until date
-// TODO: add each times
-export const Cache = ( options?: number | string | ICacheOptions ): MethodDecorator =>
-{
-  const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
-  switch ( true )
-  {
-    case typeof options === 'number':
-        cacheOptions.until = options as number;
-        break;
-    case typeof options === 'string' && options.lastIndexOf( 'times' ) > 0:
-        cacheOptions.times = parseInt( options as string, 10 );
-        break;
-    case typeof options === 'string': // just try to parse some timestamp
-        cacheOptions.until = parseInt( options as string, 10 );
-        break;
-    case isObject( cacheOptions ) && !!options:
-        cacheOptions.until = ( options as ICacheOptions ).until || undefined;
-        cacheOptions.times = ( options as ICacheOptions ).times || undefined;
-        if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
-          cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
-        break;
-  }
-  return ( target: Object, targetKey?: string | symbol ): void =>
-  {
-    const targetKeyString = targetKey.toString();
-    Object.defineProperty( target,
-      `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
-      {
-        writable: false,
-        value: function()
-        {
-          Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
-          return this;
-        }
-    } );
-    // Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
-    Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
-  };
-};
-
-export const CacheClear = <TClass extends AbstractApiClient>( targetKey: MethodNames<TClass> ) =>
-  ( target: TClass, name: MethodNames<TClass>, descriptor: TypedPropertyDescriptor<( ...args: any[] ) => any> ) =>
-  {
-    const originalValue = descriptor.value;
-    descriptor.value = function()
-    {
-      Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
-      originalValue.call( this );
-    };
-  };
-
-
 // define param decorators
 export const Path = paramDecoratorFactory( 'Path' );
 export const Body = paramDecoratorFactory( 'Body' );
@@ -425,3 +324,6 @@ export const DELETE = methodDecoratorFactory( 'DELETE' );
 export const HEAD = methodDecoratorFactory( 'HEAD' );
 export const OPTIONS = methodDecoratorFactory( 'OPTIONS' );
 export const JSONP = methodDecoratorFactory( 'JSONP' );
+
+export { AbstractApiClient } from './+';
+export { Cache, CacheClear } from './cache';
