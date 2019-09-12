@@ -4,7 +4,7 @@ import { HttpClient, HttpParams, HttpHeaders, HttpRequest, HttpEvent,  } from '@
 import { Observable, of, throwError, from } from 'rxjs';
 import { switchMap, catchError, takeLast, shareReplay, share } from 'rxjs/operators';
 import { extend, isObject, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
-import { cacheMap, ICacheOptions } from './cache';
+import { cacheMap, ICacheOptions, handleCache } from './cache';
 
 const paramDecoratorFactory = ( paramDecoName: string ) =>
 {
@@ -120,10 +120,6 @@ const buildBody = ( target, targetKey, args ) =>
   return body;
 };
 
-const handleCache = () =>
-{
-};
-
 // build method decorators
 const methodDecoratorFactory = ( method: string ) =>
 {
@@ -134,77 +130,36 @@ const methodDecoratorFactory = ( method: string ) =>
       // let oldValue = descriptor.value;
       descriptor.value = function( ...args: any[] ): Observable<any>
       {
-        let requestUrl = url;
         if ( this.http === undefined )
           throw new TypeError( `Property 'http' missing in ${this.constructor}. Check constructor dependencies!` );
 
-        // query params
-        const params = buildQueryParams.bind( this, target, targetKey, args ).call();
+        const
+          // path params
+          requestUrl = buildPathParams( target, targetKey, args, url ),
 
-        // path params
-        requestUrl = buildPathParams( target, targetKey, args, requestUrl );
+          // query params
+          params = buildQueryParams.bind( this, target, targetKey, args ).call(),
 
-        // process headers
-        const headers = buildHeaders.bind( this, target, targetKey, args ).call();
+          // process headers
+          headers = buildHeaders.bind( this, target, targetKey, args ).call(),
 
-        // handle @Body
-        const body = buildBody( target, targetKey, args );
+          // handle @Body
+          body = buildBody( target, targetKey, args ),
 
-        // handle @Type
-        const responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey );
+          // handle @Type
+          responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey ),
 
-        const getCacheKey = ( cacheUrl: string, cacheHeaders: HttpHeaders, cacheQuery: any, cacheResponseType?: any ) =>
-        {
-          const headerArr = [];
-          cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, cacheHeaders.getAll( name ).join() ) );
-          return [cacheUrl, headerArr.join(), cacheQuery, cacheResponseType].join();
-        };
+          errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
 
-        const errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
-        let requestObject: HttpRequest<any>;
         return ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ).pipe
         (
           switchMap( baseUrl =>
           {
-            requestObject = new HttpRequest( method, requestUrl, { body, headers, params, responseType } );
-            let returnRequest: Observable<HttpEvent<any>>;
-            // check if we got a cache meta and entry
-            const cacheOptions: ICacheOptions = Reflect.getOwnMetadata( MetadataKeys.Cache, target, targetKey );
-            if ( cacheOptions )
-            {
-              const
-                cacheMapKey = getCacheKey( baseUrl + requestUrl, headers, params, responseType ),
-                shouldClearCache = Reflect.getOwnMetadata( MetadataKeys.ClearCache, target, targetKey );
-              if ( shouldClearCache )
-              {
-                cacheMap.delete( cacheMapKey );
-                Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
-              }
-              const cacheMapEntry = cacheMap.get( cacheMapKey );
-              if ( cacheMapEntry ) switch ( true )
-              {
-                case !!cacheOptions.until && ( +new Date ) < cacheMapEntry[1].until:
-                  [ returnRequest ] = cacheMapEntry;
-                  break;
-                case !!cacheOptions.times && cacheMapEntry[1].times > 0:
-                  cacheMapEntry[1].times--; // decrease called times
-                  cacheMap.set( cacheMapKey, [ returnRequest, cacheMapEntry[1] ] );
-                  [ returnRequest ] = cacheMapEntry;
-                  break;
-              }
-              if ( !returnRequest ) // first cache request
-              {
-                returnRequest = this.http.request( requestObject ).pipe( shareReplay() );
-                const saveCacheOptions = extend( {}, cacheOptions );
-                saveCacheOptions.until = cacheOptions.until && ( +new Date ) + cacheOptions.until;
-                cacheMap.set( cacheMapKey, [ returnRequest, saveCacheOptions ] );
-              }
-            }
-            else returnRequest = ( this.http as HttpClient ).request( requestObject ).pipe( share() );
-
-            return returnRequest;
+            const requestObject = new HttpRequest( method, baseUrl + requestUrl, { body, headers, params, responseType } );
+            return handleCache( target, targetKey, this.http, requestObject )
+              || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
           } ),
-          takeLast( 1 ),
+          takeLast( 1 ), // TODO: take only request end result for now...
           catchError( ( error, caught ) => {
             // console.log( requestObject );
             // debugger;
@@ -212,7 +167,6 @@ const methodDecoratorFactory = ( method: string ) =>
               ? errorHandler.bind( target, error, caught, /*requestObj*/ ).call()
               : throwError( error );
             } ),
-
           // oldValue.call(this, observable)
         );
 
