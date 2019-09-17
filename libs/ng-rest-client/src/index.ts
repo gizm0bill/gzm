@@ -1,8 +1,8 @@
 /// <reference path="typings.d.ts" />
 
 import { HttpClient, HttpParams, HttpHeaders, HttpRequest, } from '@angular/common/http';
-import { Observable, of, throwError, from, zip, combineLatest, Subject } from 'rxjs';
-import { switchMap, catchError, takeLast, share, take, map } from 'rxjs/operators';
+import { Observable, of, throwError, from, zip } from 'rxjs';
+import { switchMap, catchError, takeLast, share, map } from 'rxjs/operators';
 import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
 import { handleCache } from './cache';
 
@@ -58,26 +58,26 @@ const buildPathParams = ( target, targetKey, args, requestUrl ) =>
   return requestUrl;
 };
 
-const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ) =>
+const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Observable<any> =>
 {
   const
     headers: Observable<any>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ),
     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey );
 
-  if ( classWideHeaders ) classWideHeaders.forEach( ( _header: Function|Object ) =>
+  if ( classWideHeaders ) classWideHeaders.forEach( ( headerDef: Function|Object ) =>
   {
-    if ( typeof _header === 'function' ) // just function header, should return an observable / object value
+    if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
     {
-      const headerForm$ = _header.call( undefined, thisArg );
+      const headerForm$ = headerDef.call( undefined, thisArg );
       if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
       else headers.push( headerForm$ );
     }
     else // is of object type
     {
-      Object.entries( _header ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
+      Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
       {
-        if ( typeof headerForm === 'function' ) // is function, should return a string value
+        if ( typeof headerForm === 'function' ) // is function, should return an observable / string value
         {
           const headerValue$ = headerForm.call( undefined, thisArg );
           if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
@@ -87,16 +87,15 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ) =>
       } );
     }
   } );
-  zip( ...headers ).pipe
+  return zip( ...headers ).pipe
   (
-    map( headerResults =>
-    {
-      const h = new HttpHeaders( { someHeader: ['multiple', 'values'] } );
-      console.log( h );
-      debugger;
-    } )
-  ).subscribe();
-  debugger;
+    map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
+    (
+      Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
+        headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), headerValue ] ),
+      headersObject
+    ), {} ) ) )
+  );
   // if ( methodHeaders ) methodHeaders.forEach( h =>
   // {
   //   let k = {};
@@ -167,7 +166,7 @@ const methodDecoratorFactory = ( method: string ) =>
           params = buildQueryParams.bind( this, target, targetKey, args ).call(),
 
           // process headers
-          headers = buildHeaders.call( undefined, this, target, targetKey, args ),
+          headers$ = buildHeaders( this, target, targetKey, args ),
 
           // handle @Body
           body = buildBody( target, targetKey, args ),
@@ -177,9 +176,9 @@ const methodDecoratorFactory = ( method: string ) =>
 
           errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
 
-        return ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ).pipe
+        return zip( ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ), headers$ ).pipe
         (
-          switchMap( baseUrl =>
+          switchMap( ( [ baseUrl, headers ] ) =>
           {
             const requestObject = new HttpRequest( method, baseUrl + requestUrl, { body, headers, params, responseType } );
             return handleCache( target, targetKey, this.http, requestObject )

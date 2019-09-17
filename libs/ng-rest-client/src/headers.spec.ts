@@ -60,9 +60,11 @@ fdescribe( 'ng-rest-client', () =>
 
   it( 'should get headers from function', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
-    apiClient.testGet();
-    mockService.someSubject.next( { someHeader: 'some-other-value' } );
-    debugger;
+    apiClient.testGet().subscribe( _ => { debugger; } );
+    mockService.someSubject.next( { someHeader: 'some-other-value', someOtherHeader: 'some-other-value' } );
+    httpTestingController.expectOne( req => req.headers.has( 'someHeader' )
+      && req.headers.has( 'someOtherHeader' )
+      && req.headers.has( 'yetAnotherHeader' ) );
   } ) );
 
   afterEach( () => httpTestingController.verify() );
