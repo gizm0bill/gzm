@@ -1,10 +1,10 @@
 /// <reference path="typings.d.ts" />
 
-import { HttpClient, HttpParams, HttpHeaders, HttpRequest, HttpEvent,  } from '@angular/common/http';
-import { Observable, of, throwError, from } from 'rxjs';
-import { switchMap, catchError, takeLast, shareReplay, share } from 'rxjs/operators';
-import { extend, isObject, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
-import { cacheMap, ICacheOptions, handleCache } from './cache';
+import { HttpClient, HttpParams, HttpHeaders, HttpRequest, } from '@angular/common/http';
+import { Observable, of, throwError, from, zip, combineLatest, Subject } from 'rxjs';
+import { switchMap, catchError, takeLast, share, take, map } from 'rxjs/operators';
+import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
+import { handleCache } from './cache';
 
 const paramDecoratorFactory = ( paramDecoName: string ) =>
 {
@@ -58,31 +58,57 @@ const buildPathParams = ( target, targetKey, args, requestUrl ) =>
   return requestUrl;
 };
 
-const buildHeaders = ( target, targetKey, args ) =>
+const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ) =>
 {
   const
-    headers = {},
-    defaultHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ),
+    headers: Observable<any>[] = [],
+    classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ),
     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey );
 
-  if ( defaultHeaders ) defaultHeaders.forEach( header =>
+  if ( classWideHeaders ) classWideHeaders.forEach( ( _header: Function|Object ) =>
   {
-    const _h = extend( {}, header );
-    for ( const _hk in _h.key ) if ( typeof _h.key[_hk] === 'function' ) _h.key[_hk] = _h.key[_hk].call( this );
-    extend( headers, _h.key );
+    if ( typeof _header === 'function' ) // just function header, should return an observable / object value
+    {
+      const headerForm$ = _header.call( undefined, thisArg );
+      if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
+      else headers.push( headerForm$ );
+    }
+    else // is of object type
+    {
+      Object.entries( _header ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
+      {
+        if ( typeof headerForm === 'function' ) // is function, should return a string value
+        {
+          const headerValue$ = headerForm.call( undefined, thisArg );
+          if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
+          else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+        }
+        else headers.push( of( { [headerKey]: headerForm } ) );
+      } );
+    }
   } );
-  if ( methodHeaders ) methodHeaders.forEach( h =>
-  {
-    let k = {};
-    // param header from @Header
-    if ( typeof h.key === 'string' ) k[h.key] = args[h.index];
-    // method header from @Headers, use smth like @Headers(function(){ return { Key: smth.call(this) }; }), hacky, I know
-    else if ( typeof h.key === 'function' ) k = h.key.call( this );
-    else k = h.key;
-    // TODO add to headers rather than overwrite?
-    extend( headers, k );
-  } );
-  return new HttpHeaders( headers );
+  zip( ...headers ).pipe
+  (
+    map( headerResults =>
+    {
+      const h = new HttpHeaders( { someHeader: ['multiple', 'values'] } );
+      console.log( h );
+      debugger;
+    } )
+  ).subscribe();
+  debugger;
+  // if ( methodHeaders ) methodHeaders.forEach( h =>
+  // {
+  //   let k = {};
+  //   // param header from @Header
+  //   if ( typeof h.key === 'string' ) k[h.key] = args[h.index];
+  //   // method header from @Headers, use smth like @Headers(function(){ return { Key: smth.call(this) }; }), hacky, I know
+  //   else if ( typeof h.key === 'function' ) k = h.key.call( this );
+  //   else k = h.key;
+  //   // TODO add to headers rather than overwrite?
+  //   extend( headers, k );
+  // } );
+  return new HttpHeaders( {} );
 };
 
 const buildBody = ( target, targetKey, args ) =>
@@ -141,7 +167,7 @@ const methodDecoratorFactory = ( method: string ) =>
           params = buildQueryParams.bind( this, target, targetKey, args ).call(),
 
           // process headers
-          headers = buildHeaders.bind( this, target, targetKey, args ).call(),
+          headers = buildHeaders.call( undefined, this, target, targetKey, args ),
 
           // handle @Body
           body = buildBody( target, targetKey, args ),
@@ -171,7 +197,6 @@ const methodDecoratorFactory = ( method: string ) =>
         );
 
       };
-
       return descriptor;
     };
   };
@@ -225,7 +250,7 @@ export function Headers( headers: {} )
     else // class type
     {
       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingHeaders.push( { index: undefined, key: headers } );
+      existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
     }
   }
