@@ -1,7 +1,7 @@
 /// <reference path="typings.d.ts" />
 
 import { HttpClient, HttpParams, HttpHeaders, HttpRequest, } from '@angular/common/http';
-import { Observable, of, throwError, from, zip } from 'rxjs';
+import { Observable, of, throwError, from, zip, merge } from 'rxjs';
 import { switchMap, catchError, takeLast, share, map } from 'rxjs/operators';
 import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
 import { handleCache } from './cache';
@@ -62,10 +62,10 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
 {
   const
     headers: Observable<any>[] = [],
-    classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ),
-    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey );
+    classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
+    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [];
 
-  if ( classWideHeaders ) classWideHeaders.forEach( ( headerDef: Function|Object ) =>
+  [ ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function|Object ) =>
   {
     if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
     {
@@ -87,7 +87,7 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
       } );
     }
   } );
-  debugger;
+
   return zip( ...headers ).pipe
   (
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
@@ -95,7 +95,7 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
         headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), headerValue ] ),
       headersObject
-    ), {} ) ) )
+    ), {} ) ) ),
   );
   // if ( methodHeaders ) methodHeaders.forEach( h =>
   // {
@@ -243,7 +243,7 @@ export function Headers( headers: {} )
     if ( targetKey !== undefined )
     {
       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
-      existingHeaders.push( { index: undefined, key: headers } );
+      existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
     }
     else // class type
