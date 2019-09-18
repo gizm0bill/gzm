@@ -1,9 +1,9 @@
-import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { TestBed, inject } from '@angular/core/testing';
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Cache, GET, CacheClear, Headers } from '.';
-import { Observable, Subject, of, BehaviorSubject } from 'rxjs';
-import { take, tap, repeat, shareReplay, publishReplay } from 'rxjs/operators';
+import { AbstractApiClient, GET, Headers, Header, Header_ } from '.';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { take, skip } from 'rxjs/operators';
 
 fdescribe( 'ng-rest-client', () =>
 {
@@ -45,6 +45,9 @@ fdescribe( 'ng-rest-client', () =>
       public readonly mockService: MockService
     ) { super( http ); }
 
+    @Header()
+    [ NAME_CLASS_WIDE_1 ] = this.mockService.someSubject.pipe( skip( 1 ) );
+
     @GET( GET_URL )
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
     @Headers
@@ -53,7 +56,7 @@ fdescribe( 'ng-rest-client', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet(): Observable<any> { return; }
+    testGet( @Header() someHeaderForMethod?: string ): Observable<any> { return; }
   }
 
   beforeEach( () =>

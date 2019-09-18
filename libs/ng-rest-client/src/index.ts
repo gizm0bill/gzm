@@ -10,8 +10,9 @@ const paramDecoratorFactory = ( paramDecoName: string ) =>
 {
   return function( key?: string, ...extraOptions: any[] )
   {
-    return function( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex: number )
+    function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number )
     {
+      debugger;
       const
         metadataKey = MetadataKeys[paramDecoName],
         existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
@@ -19,6 +20,7 @@ const paramDecoratorFactory = ( paramDecoName: string ) =>
       existingParams.push( { index: parameterIndex, key, ...extraOptions } );
       Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
     };
+    return decorator;
   };
 };
 
@@ -146,60 +148,55 @@ const buildBody = ( target, targetKey, args ) =>
 };
 
 // build method decorators
-const methodDecoratorFactory = ( method: string ) =>
-{
-  return ( url: string = '' ) =>
-  {
-    return ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: PropertyDescriptor ) =>
+const methodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
+  ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<() => Observable<any>> ) =>
+  (
+    // let oldValue = descriptor.value;
+    descriptor.value = function( ...args: any[] ): Observable<any>
     {
-      // let oldValue = descriptor.value;
-      descriptor.value = function( ...args: any[] ): Observable<any>
-      {
-        if ( this.http === undefined )
-          throw new TypeError( `Property 'http' missing in ${this.constructor}. Check constructor dependencies!` );
+      if ( this.http === undefined )
+        throw new TypeError( `Property 'http' missing in ${this.constructor}. Check constructor dependencies!` );
 
-        const
-          // path params
-          requestUrl = buildPathParams( target, targetKey, args, url ),
+      const
+        // path params
+        requestUrl = buildPathParams( target, targetKey, args, url ),
 
-          // query params
-          params = buildQueryParams.bind( this, target, targetKey, args ).call(),
+        // query params
+        params = buildQueryParams.bind( this, target, targetKey, args ).call(),
 
-          // process headers
-          headers$ = buildHeaders( this, target, targetKey, args ),
+        // process headers
+        headers$ = buildHeaders( this, target, targetKey, args ),
 
-          // handle @Body
-          body = buildBody( target, targetKey, args ),
+        // handle @Body
+        body = buildBody( target, targetKey, args ),
 
-          // handle @Type
-          responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey ),
+        // handle @Type
+        responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey ),
 
-          errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
+        errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
 
-        return zip( ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ), headers$ ).pipe
-        (
-          switchMap( ( [ baseUrl, headers ] ) =>
-          {
-            const requestObject = new HttpRequest( method, baseUrl + requestUrl, { body, headers, params, responseType } );
-            return handleCache( target, targetKey, this.http, requestObject )
-              || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
+      return zip( ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ), headers$ ).pipe
+      (
+        switchMap( ( [ baseUrl, headers ] ) =>
+        {
+          const requestObject = new HttpRequest( method, baseUrl + requestUrl, { body, headers, params, responseType } );
+          return handleCache( target, targetKey, this.http, requestObject )
+            || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
+        } ),
+        takeLast( 1 ), // TODO: take only request end result for now...
+        catchError( ( error, caught ) => {
+          // console.log( requestObject );
+          // debugger;
+          return errorHandler
+            ? errorHandler.bind( target, error, caught, /*requestObj*/ ).call()
+            : throwError( error );
           } ),
-          takeLast( 1 ), // TODO: take only request end result for now...
-          catchError( ( error, caught ) => {
-            // console.log( requestObject );
-            // debugger;
-            return errorHandler
-              ? errorHandler.bind( target, error, caught, /*requestObj*/ ).call()
-              : throwError( error );
-            } ),
-          // oldValue.call(this, observable)
-        );
+        // oldValue.call(this, observable)
+      );
 
-      };
-      return descriptor;
-    };
-  };
-};
+    },
+    descriptor
+  );
 
 
 /**
