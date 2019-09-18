@@ -87,6 +87,7 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
       } );
     }
   } );
+  debugger;
   return zip( ...headers ).pipe
   (
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
@@ -107,7 +108,6 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
   //   // TODO add to headers rather than overwrite?
   //   extend( headers, k );
   // } );
-  return new HttpHeaders( {} );
 };
 
 const buildBody = ( target, targetKey, args ) =>
