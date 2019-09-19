@@ -6,23 +6,41 @@ import { switchMap, catchError, takeLast, share, map } from 'rxjs/operators';
 import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
 import { handleCache } from './cache';
 
-const paramDecoratorFactory = ( paramDecoName: string ) =>
-{
-  return function( key?: string, ...extraOptions: any[] )
+const generalDecoratorFactory = ( decoratorName: string ) =>
+  ( ...options: any[] ) =>
+  {
+    function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void; // class decorator
+    function decorator( target: AbstractApiClient, propertyKey: string | symbol ): void; // property decorator
+    function decorator( target: AbstractApiClient, propertyKey: string | symbol, descriptor: PropertyDescriptor ): void; // method decorator
+    function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ): void; // parameter decorator
+    function decorator( target: any, propertyKey?: any, descriptorOrParameterIndex?: any ): void
+    {
+      console.log( target instanceof AbstractApiClient );
+      console.log( ...options );
+      debugger;
+    }
+    return decorator;
+  };
+
+export const Wtv = generalDecoratorFactory( 'Wtv' );
+
+
+const parameterOrPropertyDecoratorFactory = ( decoratorName: string ) =>
+  ( key?: string, ...extraOptions: any[] ) =>
   {
     function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number )
     {
-      debugger;
       const
-        metadataKey = MetadataKeys[paramDecoName],
-        existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
+        saveToKey = parameterIndex !== undefined ? propertyKey : undefined,
+        metadataKey = MetadataKeys[ decoratorName ],
+        existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-      existingParams.push( { index: parameterIndex, key, ...extraOptions } );
-      Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
-    };
+      existingParams.push( parameterIndex !== undefined ? { index: parameterIndex, key, ...extraOptions } : { propertyKey, ...extraOptions } );
+      Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
+    }
     return decorator;
   };
-};
+
 
 const buildQueryParams = ( target, targetKey, args ) =>
 {
@@ -31,7 +49,7 @@ const buildQueryParams = ( target, targetKey, args ) =>
     queryParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey ),
     query = new HttpParams();
 
-  // TODO see headers processing and make something common
+  // TODO: see headers processing and make something common
   if ( defaultQueryParams ) defaultQueryParams.forEach( defaQuery =>
   {
     const _q = extend( {}, defaQuery );
@@ -65,7 +83,10 @@ const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Ob
   const
     headers: Observable<any>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
-    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [];
+    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
+    propertyHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target );
+
+  debugger;
 
   [ ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function|Object ) =>
   {
@@ -286,9 +307,9 @@ export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDec
     Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
 
 // define param decorators
-export const Path = paramDecoratorFactory( 'Path' );
-export const Body = paramDecoratorFactory( 'Body' );
-export const Header = paramDecoratorFactory( 'Header' );
+export const Path = parameterOrPropertyDecoratorFactory( 'Path' );
+export const Body = parameterOrPropertyDecoratorFactory( 'Body' );
+export const Header = parameterOrPropertyDecoratorFactory( 'Header' );
 
 // define method decorators
 export const POST = methodDecoratorFactory( 'POST' );

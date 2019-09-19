@@ -1,11 +1,11 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, GET, Headers, Header, Header_ } from '.';
+import { AbstractApiClient, GET, Headers, Header } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { take, skip } from 'rxjs/operators';
 
-fdescribe( 'ng-rest-client', () =>
+describe( 'ng-rest-client', () =>
 {
   const
     GET_URL = 'test-get-url',
@@ -46,7 +46,7 @@ fdescribe( 'ng-rest-client', () =>
     ) { super( http ); }
 
     @Header()
-    [ NAME_CLASS_WIDE_1 ] = this.mockService.someSubject.pipe( skip( 1 ) );
+    testHeader = this.mockService.someSubject.pipe( skip( 1 ) );
 
     @GET( GET_URL )
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
