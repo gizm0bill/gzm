@@ -5,7 +5,7 @@ import { AbstractApiClient, GET, Headers, Header } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { take, skip } from 'rxjs/operators';
 
-describe( 'ng-rest-client', () =>
+fdescribe( 'ng-rest-client', () =>
 {
   const
     GET_URL = 'test-get-url',
@@ -28,6 +28,7 @@ describe( 'ng-rest-client', () =>
   {
     public readonly someSubject = new BehaviorSubject( {} );
     public readonly someOtherSubject = new BehaviorSubject( {} );
+    public readonly singleValueSubject = new BehaviorSubject( {} );
   }
 
   @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ) )
@@ -39,6 +40,7 @@ describe( 'ng-rest-client', () =>
   } )
   class ApiClient extends AbstractApiClient
   {
+    testProp = Math.random();
     constructor
     (
       protected readonly http: HttpClient,
@@ -46,7 +48,9 @@ describe( 'ng-rest-client', () =>
     ) { super( http ); }
 
     @Header()
-    testHeader = this.mockService.someSubject.pipe( skip( 1 ) );
+    propertyHeader = this.mockService.singleValueSubject.pipe( take( 1 ) );
+    @Header()
+    anotherPropertyHeader = '1';
 
     @GET( GET_URL )
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
@@ -56,7 +60,7 @@ describe( 'ng-rest-client', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet( @Header() someHeaderForMethod?: string ): Observable<any> { return; }
+    testGet( @Header( 'param' ) someHeaderForMethod?: string ): Observable<any> { return; }
   }
 
   beforeEach( () =>
@@ -80,10 +84,12 @@ describe( 'ng-rest-client', () =>
       [ NAME_CLASS_WIDE_1 ]: VALUE_CLASS_WIDE_2,
       [ NAME_CLASS_WIDE_2 ]: VALUE_CLASS_WIDE_3
     } );
+    mockService.singleValueSubject.next( ['some-value', 'some-other-value'] );
     apiClient.testGet().subscribe();
 
     const request1 = httpTestingController.expectOne( req =>
     {
+      debugger;
       const
         expectHasHeaders = req.headers.has( NAME_CLASS_WIDE_1 )
           && req.headers.has( NAME_CLASS_WIDE_2 )

@@ -5,6 +5,7 @@ import { Observable, of, throwError, from, zip, merge } from 'rxjs';
 import { switchMap, catchError, takeLast, share, map } from 'rxjs/operators';
 import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
 import { handleCache } from './cache';
+import { buildHeaders } from './headers';
 
 const generalDecoratorFactory = ( decoratorName: string ) =>
   ( ...options: any[] ) =>
@@ -78,60 +79,60 @@ const buildPathParams = ( target, targetKey, args, requestUrl ) =>
   return requestUrl;
 };
 
-const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Observable<any> =>
-{
-  const
-    headers: Observable<any>[] = [],
-    classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
-    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
-    propertyHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target );
+// const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Observable<any> =>
+// {
+//   const
+//     headers: Observable<any>[] = [],
+//     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
+//     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
+//     propertyHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target );
 
-  debugger;
+//   debugger;
 
-  [ ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function|Object ) =>
-  {
-    if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
-    {
-      const headerForm$ = headerDef.call( undefined, thisArg );
-      if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
-      else headers.push( headerForm$ );
-    }
-    else // is of object type
-    {
-      Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
-      {
-        if ( typeof headerForm === 'function' ) // is function, should return an observable / string value
-        {
-          const headerValue$ = headerForm.call( undefined, thisArg );
-          if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
-          else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
-        }
-        else headers.push( of( { [headerKey]: headerForm } ) );
-      } );
-    }
-  } );
+//   [ ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function|Object ) =>
+//   {
+//     if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
+//     {
+//       const headerForm$ = headerDef.call( undefined, thisArg );
+//       if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
+//       else headers.push( headerForm$ );
+//     }
+//     else // is of object type
+//     {
+//       Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
+//       {
+//         if ( typeof headerForm === 'function' ) // is function, should return an observable / string value
+//         {
+//           const headerValue$ = headerForm.call( undefined, thisArg );
+//           if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
+//           else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+//         }
+//         else headers.push( of( { [headerKey]: headerForm } ) );
+//       } );
+//     }
+//   } );
 
-  return zip( ...headers ).pipe
-  (
-    map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
-    (
-      Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
-        headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), headerValue ] ),
-      headersObject
-    ), {} ) ) ),
-  );
-  // if ( methodHeaders ) methodHeaders.forEach( h =>
-  // {
-  //   let k = {};
-  //   // param header from @Header
-  //   if ( typeof h.key === 'string' ) k[h.key] = args[h.index];
-  //   // method header from @Headers, use smth like @Headers(function(){ return { Key: smth.call(this) }; }), hacky, I know
-  //   else if ( typeof h.key === 'function' ) k = h.key.call( this );
-  //   else k = h.key;
-  //   // TODO add to headers rather than overwrite?
-  //   extend( headers, k );
-  // } );
-};
+//   return zip( ...headers ).pipe
+//   (
+//     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
+//     (
+//       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
+//         headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), headerValue ] ),
+//       headersObject
+//     ), {} ) ) ),
+//   );
+//   // if ( methodHeaders ) methodHeaders.forEach( h =>
+//   // {
+//   //   let k = {};
+//   //   // param header from @Header
+//   //   if ( typeof h.key === 'string' ) k[h.key] = args[h.index];
+//   //   // method header from @Headers, use smth like @Headers(function(){ return { Key: smth.call(this) }; }), hacky, I know
+//   //   else if ( typeof h.key === 'function' ) k = h.key.call( this );
+//   //   else k = h.key;
+//   //   // TODO add to headers rather than overwrite?
+//   //   extend( headers, k );
+//   // } );
+// };
 
 const buildBody = ( target, targetKey, args ) =>
 {
@@ -251,28 +252,28 @@ export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | str
  * class decorator
  * method decorator
  */
-export function Headers( headers: {} )
-{
-  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-  function decorator( target: Object, targetKey: string | symbol ): void;
-  function decorator( target: Object, targetKey?: string | symbol ): void
-  {
-    const metadataKey = MetadataKeys.Header;
-    if ( targetKey !== undefined )
-    {
-      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
-      existingHeaders.push( headers );
-      Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
-    }
-    else // class type
-    {
-      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingHeaders.push( headers );
-      Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
-    }
-  }
-  return decorator;
-}
+// export function Headers( headers: {} )
+// {
+//   function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
+//   function decorator( target: Object, targetKey: string | symbol ): void;
+//   function decorator( target: Object, targetKey?: string | symbol ): void
+//   {
+//     const metadataKey = MetadataKeys.Header;
+//     if ( targetKey !== undefined )
+//     {
+//       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
+//       existingHeaders.push( headers );
+//       Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
+//     }
+//     else // class type
+//     {
+//       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+//       existingHeaders.push( headers );
+//       Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
+//     }
+//   }
+//   return decorator;
+// }
 
 export function Query( keyOrParams: any, ...extraOptions: any[] )
 {
@@ -309,7 +310,7 @@ export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDec
 // define param decorators
 export const Path = parameterOrPropertyDecoratorFactory( 'Path' );
 export const Body = parameterOrPropertyDecoratorFactory( 'Body' );
-export const Header = parameterOrPropertyDecoratorFactory( 'Header' );
+// export const Header = parameterOrPropertyDecoratorFactory( 'Header' );
 
 // define method decorators
 export const POST = methodDecoratorFactory( 'POST' );
@@ -323,3 +324,4 @@ export const JSONP = methodDecoratorFactory( 'JSONP' );
 
 export { AbstractApiClient } from './+';
 export { Cache, CacheClear } from './cache';
+export { Headers, Header } from './headers';
