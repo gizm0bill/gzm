@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AbstractApiClient, GET, Headers, Header } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
-import { take, skip } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
-fdescribe( 'ng-rest-client', () =>
+fdescribe( 'Headers', () =>
 {
   const
     GET_URL = 'test-get-url',
@@ -20,8 +20,12 @@ fdescribe( 'ng-rest-client', () =>
     NAME_FOR_METHOD_2 = 'someOtherHeaderForMethod',
     VALUE_FOR_METHOD_2 = 'some-other-header-for-method',
     NAME_FOR_METHOD_3 = 'yetAnotherHeaderForMethod',
-    VALUE_FOR_METHOD_3 = 'yet-another-header-for-method';
-
+    VALUE_FOR_METHOD_3 = 'yet-another-header-for-method',
+    NAME_PROPERTY_1 = 'someHeaderProperty',
+    VALUE_PROPERTY_1 = 'some-header-property',
+    NAME_PROPERTY_2 = 'someOtherHeaderProperty',
+    VALUE_RANDOM_1 = 'some-value',
+    VALUE_RANDOM_2 = 'some-other-value';
   let httpTestingController: HttpTestingController;
 
   class MockService
@@ -31,6 +35,7 @@ fdescribe( 'ng-rest-client', () =>
     public readonly singleValueSubject = new BehaviorSubject( {} );
   }
 
+  // class-wide Header value from function at runtime for current method
   @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ) )
   @Headers
   ( {
@@ -47,12 +52,14 @@ fdescribe( 'ng-rest-client', () =>
       public readonly mockService: MockService
     ) { super( http ); }
 
-    @Header()
-    propertyHeader = this.mockService.singleValueSubject.pipe( take( 1 ) );
-    @Header()
-    anotherPropertyHeader = '1';
+    @Header() // Header value from simple class property
+    [ NAME_PROPERTY_1 ] = [ VALUE_PROPERTY_1 ];
+
+    @Header() // Header value from Observable class property
+    [ NAME_PROPERTY_2 ] = this.mockService.singleValueSubject.pipe( take( 1 ) );
 
     @GET( GET_URL )
+    // Header value from function at runtime for current method
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
     @Headers
     ( {
@@ -60,7 +67,7 @@ fdescribe( 'ng-rest-client', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet( @Header( 'param' ) someHeaderForMethod?: string ): Observable<any> { return; }
+    testGet( @Header( NAME_FOR_METHOD_1 ) h?: string ): Observable<any> { return; }
   }
 
   beforeEach( () =>
@@ -84,23 +91,26 @@ fdescribe( 'ng-rest-client', () =>
       [ NAME_CLASS_WIDE_1 ]: VALUE_CLASS_WIDE_2,
       [ NAME_CLASS_WIDE_2 ]: VALUE_CLASS_WIDE_3
     } );
-    mockService.singleValueSubject.next( ['some-value', 'some-other-value'] );
+    mockService.singleValueSubject.next( [ VALUE_RANDOM_1, VALUE_RANDOM_2 ] );
     apiClient.testGet().subscribe();
 
     const request1 = httpTestingController.expectOne( req =>
     {
-      debugger;
       const
         expectHasHeaders = req.headers.has( NAME_CLASS_WIDE_1 )
           && req.headers.has( NAME_CLASS_WIDE_2 )
           && req.headers.has( NAME_CLASS_WIDE_3 ),
-        allHeaders1 = req.headers.getAll( NAME_CLASS_WIDE_1 ),
-        allHeaders2 = req.headers.getAll( NAME_CLASS_WIDE_2 ),
-        allHeaders3 = req.headers.getAll( NAME_CLASS_WIDE_3 ),
-        expectHeaders1 = allHeaders1.includes( VALUE_CLASS_WIDE_1 ) && allHeaders1.includes( VALUE_CLASS_WIDE_2 ),
-        expectHeaders2 = allHeaders2.includes( VALUE_CLASS_WIDE_2 ) && allHeaders2.includes( VALUE_CLASS_WIDE_3 ),
-        expectHeaders3 = allHeaders3.includes( VALUE_CLASS_WIDE_3 );
-      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3;
+        classWideHeaders1 = req.headers.getAll( NAME_CLASS_WIDE_1 ),
+        classWideHeaders2 = req.headers.getAll( NAME_CLASS_WIDE_2 ),
+        classWideHeaders3 = req.headers.getAll( NAME_CLASS_WIDE_3 ),
+        propertyHeaders1 = req.headers.getAll( NAME_PROPERTY_1 ),
+        propertyHeaders2 = req.headers.getAll( NAME_PROPERTY_2 ),
+        expectHeaders1 = classWideHeaders1.includes( VALUE_CLASS_WIDE_1 ) && classWideHeaders1.includes( VALUE_CLASS_WIDE_2 ),
+        expectHeaders2 = classWideHeaders2.includes( VALUE_CLASS_WIDE_2 ) && classWideHeaders2.includes( VALUE_CLASS_WIDE_3 ),
+        expectHeaders3 = classWideHeaders3.includes( VALUE_CLASS_WIDE_3 ),
+        expectHeaders4 = propertyHeaders1.includes( VALUE_PROPERTY_1 ),
+        expectHeaders5 = propertyHeaders2.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 );
+      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5;
     } );
     request1.flush( {} );
 

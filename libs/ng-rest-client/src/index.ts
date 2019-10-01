@@ -7,25 +7,6 @@ import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNam
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
 
-const generalDecoratorFactory = ( decoratorName: string ) =>
-  ( ...options: any[] ) =>
-  {
-    function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void; // class decorator
-    function decorator( target: AbstractApiClient, propertyKey: string | symbol ): void; // property decorator
-    function decorator( target: AbstractApiClient, propertyKey: string | symbol, descriptor: PropertyDescriptor ): void; // method decorator
-    function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ): void; // parameter decorator
-    function decorator( target: any, propertyKey?: any, descriptorOrParameterIndex?: any ): void
-    {
-      console.log( target instanceof AbstractApiClient );
-      console.log( ...options );
-      debugger;
-    }
-    return decorator;
-  };
-
-export const Wtv = generalDecoratorFactory( 'Wtv' );
-
-
 const parameterOrPropertyDecoratorFactory = ( decoratorName: string ) =>
   ( key?: string, ...extraOptions: any[] ) =>
   {
@@ -78,61 +59,6 @@ const buildPathParams = ( target, targetKey, args, requestUrl ) =>
       requestUrl = requestUrl.replace( `{${p.key}}`, args[p.index] ) );
   return requestUrl;
 };
-
-// const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args ): Observable<any> =>
-// {
-//   const
-//     headers: Observable<any>[] = [],
-//     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
-//     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
-//     propertyHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target );
-
-//   debugger;
-
-//   [ ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function|Object ) =>
-//   {
-//     if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
-//     {
-//       const headerForm$ = headerDef.call( undefined, thisArg );
-//       if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
-//       else headers.push( headerForm$ );
-//     }
-//     else // is of object type
-//     {
-//       Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
-//       {
-//         if ( typeof headerForm === 'function' ) // is function, should return an observable / string value
-//         {
-//           const headerValue$ = headerForm.call( undefined, thisArg );
-//           if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
-//           else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
-//         }
-//         else headers.push( of( { [headerKey]: headerForm } ) );
-//       } );
-//     }
-//   } );
-
-//   return zip( ...headers ).pipe
-//   (
-//     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
-//     (
-//       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
-//         headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), headerValue ] ),
-//       headersObject
-//     ), {} ) ) ),
-//   );
-//   // if ( methodHeaders ) methodHeaders.forEach( h =>
-//   // {
-//   //   let k = {};
-//   //   // param header from @Header
-//   //   if ( typeof h.key === 'string' ) k[h.key] = args[h.index];
-//   //   // method header from @Headers, use smth like @Headers(function(){ return { Key: smth.call(this) }; }), hacky, I know
-//   //   else if ( typeof h.key === 'function' ) k = h.key.call( this );
-//   //   else k = h.key;
-//   //   // TODO add to headers rather than overwrite?
-//   //   extend( headers, k );
-//   // } );
-// };
 
 const buildBody = ( target, targetKey, args ) =>
 {

@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { Observable, of, zip } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, defaultIfEmpty } from 'rxjs/operators';
 import { DerivedAbstractApiClient, Reflect, MetadataKeys, AbstractApiClient } from './+';
 
 /**
@@ -57,7 +57,7 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
     headers: Observable<any>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
-    propertyHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target )
+    propertyHeaders = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] )
       .map( ( headerDef: Array<{ [name: string]: any }> ) =>
       (
         Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ]: [ string, any ] ) => headerDef[headerKey] = thisArg[headerProperty] ),
@@ -95,6 +95,7 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
 
   return zip( ...headers ).pipe
   (
+    defaultIfEmpty( [] ),
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
     (
       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>

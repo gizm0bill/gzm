@@ -4,7 +4,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { AbstractApiClient, Cache, GET, CacheClear } from '.';
 import { Observable } from 'rxjs';
 
-describe( 'ng-rest-client', () =>
+describe( 'Cache', () =>
 {
   const
     CACHE_URL_UNTIL = 'test-get-cache-url-until',
