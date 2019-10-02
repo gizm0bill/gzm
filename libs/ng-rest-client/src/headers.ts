@@ -43,10 +43,10 @@ export const Header = ( key?: string ) =>
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
-      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
+      existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-    existingParams.push( parameterIndex !== undefined ? { index: parameterIndex, key } : { [ key || propertyKey ]: propertyKey } );
-    Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
+    existingHeaders.push( parameterIndex !== undefined ? [ parameterIndex, key ] : { [ key || propertyKey ]: propertyKey } );
+    Reflect.defineMetadata( metadataKey, existingHeaders, target, saveToKey );
   }
   return decorator;
 };
@@ -64,35 +64,39 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
         headerDef
       ) );
 
-  [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function | Object ) =>
+  [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function & Object & any[] ) =>
   {
-    if ( typeof headerDef === 'function' ) // just function header, should return an observable / object value
+    switch( true )
     {
-      const headerForm$ = headerDef.call( undefined, thisArg );
-      if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
-      else headers.push( headerForm$ );
-    }
-    else // is of object type
-    {
-      Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
-      {
-        switch ( true )
+      case typeof headerDef === 'function' :
+        const headerForm$ = headerDef.call( undefined, thisArg );
+        if ( !( headerForm$ instanceof Observable ) ) headers.push( of( headerForm$ ) );
+        else headers.push( headerForm$ );
+        break;
+      case Array.isArray( headerDef ): // parameter header
+        const [ paramPosition, headerKey ] = headerDef;
+        headers.push( of( { [headerKey]: args[ paramPosition ] } ) );
+        break;
+      default: // is of Object type, method headers
+        Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
         {
-          case headerForm instanceof Observable: // is from property decorator
-            headers.push( headerForm.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
-            break;
-          case typeof headerForm === 'function':
-            const headerValue$ = headerForm.call( undefined, thisArg );
-            if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
-            else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
-            break;
-          default:
-            headers.push( of( { [headerKey]: headerForm } ) );
-        }
-      } );
+          switch ( true )
+          {
+            case headerForm instanceof Observable: // is from property decorator
+              headers.push( headerForm.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+              break;
+            case typeof headerForm === 'function':
+              const headerValue$ = headerForm.call( undefined, thisArg );
+              if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
+              else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+              break;
+            default:
+              headers.push( of( { [headerKey]: headerForm } ) );
+          }
+        } );
+        break;
     }
   } );
-
   return zip( ...headers ).pipe
   (
     defaultIfEmpty( [] ),

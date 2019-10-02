@@ -1,7 +1,7 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, GET, Headers, Header } from '.';
+import { AbstractApiClient, Headers, Header, HEAD } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 
@@ -24,6 +24,11 @@ fdescribe( 'Headers', () =>
     NAME_PROPERTY_1 = 'someHeaderProperty',
     VALUE_PROPERTY_1 = 'some-header-property',
     NAME_PROPERTY_2 = 'someOtherHeaderProperty',
+    NAME_PARAMETER_1 = 'someHeaderParameter',
+    VALUE_PARAMETER_1 = 'some-header-parameter',
+    VALUE_PARAMETER_11 = 'some-header-parameter-1',
+    NAME_PARAMETER_2 = 'someOtherHeaderParameter',
+    VALUE_PARAMETER_2 = 'some-other-header-parameter',
     VALUE_RANDOM_1 = 'some-value',
     VALUE_RANDOM_2 = 'some-other-value';
   let httpTestingController: HttpTestingController;
@@ -45,7 +50,6 @@ fdescribe( 'Headers', () =>
   } )
   class ApiClient extends AbstractApiClient
   {
-    testProp = Math.random();
     constructor
     (
       protected readonly http: HttpClient,
@@ -58,7 +62,7 @@ fdescribe( 'Headers', () =>
     @Header() // Header value from Observable class property
     [ NAME_PROPERTY_2 ] = this.mockService.singleValueSubject.pipe( take( 1 ) );
 
-    @GET( GET_URL )
+    @HEAD( GET_URL )
     // Header value from function at runtime for current method
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
     @Headers
@@ -67,7 +71,7 @@ fdescribe( 'Headers', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet( @Header( NAME_FOR_METHOD_1 ) h?: string ): Observable<any> { return; }
+    testGet( @Header( NAME_PARAMETER_1 ) h1?: string, @Header( NAME_PARAMETER_1 ) h11?: string, @Header( NAME_PARAMETER_2 ) h2?: string ): Observable<any> { return; }
   }
 
   beforeEach( () =>
@@ -92,7 +96,7 @@ fdescribe( 'Headers', () =>
       [ NAME_CLASS_WIDE_2 ]: VALUE_CLASS_WIDE_3
     } );
     mockService.singleValueSubject.next( [ VALUE_RANDOM_1, VALUE_RANDOM_2 ] );
-    apiClient.testGet().subscribe();
+    apiClient.testGet( VALUE_PARAMETER_1, VALUE_PARAMETER_11, VALUE_PARAMETER_2 ).subscribe();
 
     const request1 = httpTestingController.expectOne( req =>
     {
@@ -105,12 +109,15 @@ fdescribe( 'Headers', () =>
         classWideHeaders3 = req.headers.getAll( NAME_CLASS_WIDE_3 ),
         propertyHeaders1 = req.headers.getAll( NAME_PROPERTY_1 ),
         propertyHeaders2 = req.headers.getAll( NAME_PROPERTY_2 ),
+        parameterHeaders1 = req.headers.getAll( NAME_PARAMETER_1 ),
+        parameterHeaders2 = req.headers.getAll( NAME_PARAMETER_2 ),
         expectHeaders1 = classWideHeaders1.includes( VALUE_CLASS_WIDE_1 ) && classWideHeaders1.includes( VALUE_CLASS_WIDE_2 ),
         expectHeaders2 = classWideHeaders2.includes( VALUE_CLASS_WIDE_2 ) && classWideHeaders2.includes( VALUE_CLASS_WIDE_3 ),
         expectHeaders3 = classWideHeaders3.includes( VALUE_CLASS_WIDE_3 ),
         expectHeaders4 = propertyHeaders1.includes( VALUE_PROPERTY_1 ),
-        expectHeaders5 = propertyHeaders2.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 );
-      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5;
+        expectHeaders5 = propertyHeaders2.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 ),
+        expectHeaders6 = parameterHeaders1.includes( VALUE_PARAMETER_1 ) && parameterHeaders1.includes( VALUE_PARAMETER_11 ) && parameterHeaders2.includes( VALUE_PARAMETER_2 );
+      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6;
     } );
     request1.flush( {} );
 
@@ -144,7 +151,6 @@ fdescribe( 'Headers', () =>
       return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5;
     } );
     request2.flush( {} );
-
   } ) );
 
   afterEach( () => httpTestingController.verify() );

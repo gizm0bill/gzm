@@ -4,7 +4,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { AbstractApiClient, GET, POST, PUT, DELETE, HEAD, PATCH, JSONP, OPTIONS } from '.';
 import { Observable } from 'rxjs';
 
-describe( 'ng-rest-client', () =>
+describe( 'Methods', () =>
 {
   const
     GET_URL = 'test-get-url',
