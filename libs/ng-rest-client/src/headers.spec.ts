@@ -5,7 +5,7 @@ import { AbstractApiClient, Headers, Header, HEAD } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 
-fdescribe( 'Headers', () =>
+describe( 'Headers', () =>
 {
   const
     SOME_URL = 'some-url',

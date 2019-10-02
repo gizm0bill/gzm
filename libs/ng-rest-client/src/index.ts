@@ -54,9 +54,8 @@ const buildQueryParams = ( target, targetKey, args ) =>
 
 const buildPathParams = ( target, targetKey, args, requestUrl ) =>
 {
-  const pathParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey );
-  if ( pathParams ) pathParams.filter( p => args[p.index] !== undefined ).forEach( p =>
-      requestUrl = requestUrl.replace( `{${p.key}}`, args[p.index] ) );
+  const pathParams: any[] = ( Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey ) || [] ).filter( ( param: string ) => args[param[0]] !== undefined );
+  if ( pathParams.length ) pathParams.forEach( param => requestUrl = requestUrl.replace( `{${param[1]}}`, args[param[0]] ) );
   return requestUrl;
 };
 
@@ -90,8 +89,8 @@ const buildBody = ( target, targetKey, args ) =>
   return body;
 };
 
-// build method decorators
-const methodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
+// builds request method decorators
+const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
   ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
   (
     // let oldValue = descriptor.value;
@@ -169,33 +168,6 @@ export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | str
   };
 }
 
-/**
- * class decorator
- * method decorator
- */
-// export function Headers( headers: {} )
-// {
-//   function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-//   function decorator( target: Object, targetKey: string | symbol ): void;
-//   function decorator( target: Object, targetKey?: string | symbol ): void
-//   {
-//     const metadataKey = MetadataKeys.Header;
-//     if ( targetKey !== undefined )
-//     {
-//       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
-//       existingHeaders.push( headers );
-//       Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
-//     }
-//     else // class type
-//     {
-//       const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-//       existingHeaders.push( headers );
-//       Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
-//     }
-//   }
-//   return decorator;
-// }
-
 export function Query( keyOrParams: any, ...extraOptions: any[] )
 {
   function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
@@ -234,14 +206,14 @@ export const Body = parameterOrPropertyDecoratorFactory( 'Body' );
 // export const Header = parameterOrPropertyDecoratorFactory( 'Header' );
 
 // define method decorators
-export const POST = methodDecoratorFactory( 'POST' );
-export const PUT = methodDecoratorFactory( 'PUT' );
-export const PATCH = methodDecoratorFactory( 'PATCH' );
-export const GET = methodDecoratorFactory( 'GET' );
-export const DELETE = methodDecoratorFactory( 'DELETE' );
-export const HEAD = methodDecoratorFactory( 'HEAD' );
-export const OPTIONS = methodDecoratorFactory( 'OPTIONS' );
-export const JSONP = methodDecoratorFactory( 'JSONP' );
+export const POST = requestMethodDecoratorFactory( 'POST' );
+export const PUT = requestMethodDecoratorFactory( 'PUT' );
+export const PATCH = requestMethodDecoratorFactory( 'PATCH' );
+export const GET = requestMethodDecoratorFactory( 'GET' );
+export const DELETE = requestMethodDecoratorFactory( 'DELETE' );
+export const HEAD = requestMethodDecoratorFactory( 'HEAD' );
+export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );
+export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
 
 export { AbstractApiClient } from './+';
 export { Cache, CacheClear } from './cache';
