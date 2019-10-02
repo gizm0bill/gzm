@@ -8,7 +8,7 @@ import { take } from 'rxjs/operators';
 fdescribe( 'Headers', () =>
 {
   const
-    GET_URL = 'test-get-url',
+    SOME_URL = 'some-url',
     NAME_CLASS_WIDE_1 = 'someHeaderClassWide',
     VALUE_CLASS_WIDE_1 = 'some-value-class-wide',
     NAME_CLASS_WIDE_2 = 'someOtherHeaderClassWide',
@@ -62,7 +62,7 @@ fdescribe( 'Headers', () =>
     @Header() // Header value from Observable class property
     [ NAME_PROPERTY_2 ] = this.mockService.singleValueSubject.pipe( take( 1 ) );
 
-    @HEAD( GET_URL )
+    @HEAD( SOME_URL )
     // Header value from function at runtime for current method
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
     @Headers
@@ -98,19 +98,19 @@ fdescribe( 'Headers', () =>
     mockService.singleValueSubject.next( [ VALUE_RANDOM_1, VALUE_RANDOM_2 ] );
     apiClient.testGet( VALUE_PARAMETER_1, VALUE_PARAMETER_11, VALUE_PARAMETER_2 ).subscribe();
 
-    const request1 = httpTestingController.expectOne( req =>
+    const request1 = httpTestingController.expectOne( ( { headers } ) =>
     {
       const
-        expectHasHeaders = req.headers.has( NAME_CLASS_WIDE_1 )
-          && req.headers.has( NAME_CLASS_WIDE_2 )
-          && req.headers.has( NAME_CLASS_WIDE_3 ),
-        classWideHeaders1 = req.headers.getAll( NAME_CLASS_WIDE_1 ),
-        classWideHeaders2 = req.headers.getAll( NAME_CLASS_WIDE_2 ),
-        classWideHeaders3 = req.headers.getAll( NAME_CLASS_WIDE_3 ),
-        propertyHeaders1 = req.headers.getAll( NAME_PROPERTY_1 ),
-        propertyHeaders2 = req.headers.getAll( NAME_PROPERTY_2 ),
-        parameterHeaders1 = req.headers.getAll( NAME_PARAMETER_1 ),
-        parameterHeaders2 = req.headers.getAll( NAME_PARAMETER_2 ),
+        expectHasHeaders = headers.has( NAME_CLASS_WIDE_1 )
+          && headers.has( NAME_CLASS_WIDE_2 )
+          && headers.has( NAME_CLASS_WIDE_3 ),
+        classWideHeaders1 = headers.getAll( NAME_CLASS_WIDE_1 ),
+        classWideHeaders2 = headers.getAll( NAME_CLASS_WIDE_2 ),
+        classWideHeaders3 = headers.getAll( NAME_CLASS_WIDE_3 ),
+        propertyHeaders1 = headers.getAll( NAME_PROPERTY_1 ),
+        propertyHeaders2 = headers.getAll( NAME_PROPERTY_2 ),
+        parameterHeaders1 = headers.getAll( NAME_PARAMETER_1 ),
+        parameterHeaders2 = headers.getAll( NAME_PARAMETER_2 ),
         expectHeaders1 = classWideHeaders1.includes( VALUE_CLASS_WIDE_1 ) && classWideHeaders1.includes( VALUE_CLASS_WIDE_2 ),
         expectHeaders2 = classWideHeaders2.includes( VALUE_CLASS_WIDE_2 ) && classWideHeaders2.includes( VALUE_CLASS_WIDE_3 ),
         expectHeaders3 = classWideHeaders3.includes( VALUE_CLASS_WIDE_3 ),
@@ -132,17 +132,17 @@ fdescribe( 'Headers', () =>
       [ NAME_FOR_METHOD_2 ]: VALUE_FOR_METHOD_3,
     } );
     apiClient.testGet().subscribe();
-    const request2 = httpTestingController.expectOne( req =>
+    const request2 = httpTestingController.expectOne( ( { headers } ) =>
     {
       const
-        expectHasHeaders = req.headers.has( NAME_FOR_METHOD_1 )
-          && req.headers.has( NAME_FOR_METHOD_2 )
-          && req.headers.has( NAME_FOR_METHOD_3 ),
-        allHeaders1 = req.headers.getAll( NAME_FOR_METHOD_1 ),
-        allHeaders2 = req.headers.getAll( NAME_FOR_METHOD_2 ),
-        allHeaders3 = req.headers.getAll( NAME_FOR_METHOD_3 ),
-        allHeaders4 = req.headers.getAll( NAME_CLASS_WIDE_2 ),
-        allHeaders5 = req.headers.getAll( NAME_CLASS_WIDE_3 ),
+        expectHasHeaders = headers.has( NAME_FOR_METHOD_1 )
+          && headers.has( NAME_FOR_METHOD_2 )
+          && headers.has( NAME_FOR_METHOD_3 ),
+        allHeaders1 = headers.getAll( NAME_FOR_METHOD_1 ),
+        allHeaders2 = headers.getAll( NAME_FOR_METHOD_2 ),
+        allHeaders3 = headers.getAll( NAME_FOR_METHOD_3 ),
+        allHeaders4 = headers.getAll( NAME_CLASS_WIDE_2 ),
+        allHeaders5 = headers.getAll( NAME_CLASS_WIDE_3 ),
         expectHeaders1 = allHeaders1.includes( VALUE_FOR_METHOD_1 ) && allHeaders1.includes( VALUE_FOR_METHOD_2 ),
         expectHeaders2 = allHeaders2.includes( VALUE_FOR_METHOD_2 ) && allHeaders2.includes( VALUE_FOR_METHOD_3 ),
         expectHeaders3 = allHeaders3.includes( VALUE_FOR_METHOD_3 ),

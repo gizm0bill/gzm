@@ -1,9 +1,9 @@
 /// <reference path="typings.d.ts" />
 
-import { HttpClient, HttpParams, HttpHeaders, HttpRequest, } from '@angular/common/http';
-import { Observable, of, throwError, from, zip, merge } from 'rxjs';
-import { switchMap, catchError, takeLast, share, map } from 'rxjs/operators';
-import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MethodNames, MetadataKeys } from './+';
+import { HttpClient, HttpParams, HttpRequest, } from '@angular/common/http';
+import { Observable, of, throwError, from, zip } from 'rxjs';
+import { switchMap, catchError, takeLast, share } from 'rxjs/operators';
+import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
 
@@ -17,7 +17,7 @@ const parameterOrPropertyDecoratorFactory = ( decoratorName: string ) =>
         metadataKey = MetadataKeys[ decoratorName ],
         existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-      existingParams.push( parameterIndex !== undefined ? { index: parameterIndex, key, ...extraOptions } : { propertyKey, ...extraOptions } );
+      existingParams.push( parameterIndex !== undefined ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
       Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
     }
     return decorator;
@@ -66,38 +66,33 @@ const buildBody = ( target, targetKey, args ) =>
       body: any = {};
   if ( bodyParams )
   {
-    bodyParams = bodyParams.filter( p => args[p.index] !== undefined );
+    bodyParams = bodyParams.filter( paramTuple => args[ paramTuple[0] ] !== undefined );
     // see if we got some Files inside
-    if ( bodyParams.some( p => args[p.index] instanceof File || args[p.index] instanceof FileList ) )
+    if ( bodyParams.some( param => args[param[0]] instanceof File || args[param[0]] instanceof FileList ) )
     {
       body = new FormData;
-      bodyParams.forEach( p =>
+      bodyParams.forEach( param =>
       {
-        const bodyArg: File|File[] = args[p.index];
+        const bodyArg: File|File[] = args[param[0]];
         if ( bodyArg instanceof FileList ) for ( const f of <File[]>bodyArg )
-          body.append( p.key || 'files[]', f, f.name );
+          body.append( param[1] || 'files[]', f, f.name );
         else if ( bodyArg instanceof File )
-          body.append( p.key || 'files[]', bodyArg, bodyArg.name );
+          body.append( param[1] || 'files[]', bodyArg, bodyArg.name );
         else
-          body.append( p.key || 'params[]', bodyArg );
+          body.append( param[1] || 'params[]', bodyArg );
       } );
     }
     // single unnamed body param, add value as is, usually string
-    else if ( bodyParams.length === 1 && bodyParams[0].key === undefined )
-      body = args[bodyParams[0].index];
+    else if ( bodyParams.length === 1 && bodyParams[0][1] === undefined ) body = args[bodyParams[0][0]];
     // plain object
-    else
-    {
-      bodyParams.map( p => ( { [p.key]: args[p.index] } ) ).forEach( p => Object.assign( body, p ) );
-      body = JSON.stringify( body );
-    }
+    else bodyParams.map( param => ( { [param[1]]: args[param[0]] } ) ).forEach( param => Object.assign( body, param ) );
   }
   return body;
 };
 
 // build method decorators
 const methodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
-  ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<() => Observable<any>> ) =>
+  ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
   (
     // let oldValue = descriptor.value;
     descriptor.value = function( ...args: any[] ): Observable<any>
@@ -127,7 +122,7 @@ const methodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
       (
         switchMap( ( [ baseUrl, headers ] ) =>
         {
-          const requestObject = new HttpRequest( method, baseUrl + requestUrl, { body, headers, params, responseType } );
+          const requestObject = new HttpRequest( method, baseUrl + requestUrl, body, { headers, params, responseType } );
           return handleCache( target, targetKey, this.http, requestObject )
             || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
         } ),
