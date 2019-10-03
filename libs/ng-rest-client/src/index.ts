@@ -1,11 +1,14 @@
 /// <reference path="typings.d.ts" />
 
-import { HttpClient, HttpParams, HttpRequest, } from '@angular/common/http';
+import { HttpClient, HttpRequest } from '@angular/common/http';
 import { Observable, of, throwError, from, zip } from 'rxjs';
 import { switchMap, catchError, takeLast, share } from 'rxjs/operators';
-import { extend, Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
+import { buildQueryParameters } from './query';
+import { buildBody } from './body';
+
 
 const parameterOrPropertyDecoratorFactory = ( decoratorName: string ) =>
   ( key?: string, ...extraOptions: any[] ) =>
@@ -24,69 +27,11 @@ const parameterOrPropertyDecoratorFactory = ( decoratorName: string ) =>
   };
 
 
-const buildQueryParams = ( target, targetKey, args ) =>
-{
-  const
-    defaultQueryParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Query, target.constructor ),
-    queryParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey ),
-    query = new HttpParams();
-
-  // TODO: see headers processing and make something common
-  if ( defaultQueryParams ) defaultQueryParams.forEach( defaQuery =>
-  {
-    const _q = extend( {}, defaQuery );
-    for ( const _qk in _q.key ) if ( _q.key.hasOwnProperty( _qk ) )
-    {
-      if ( typeof _q.key[_qk] === 'function' ) _q.key[_qk] = _q.key[_qk].call( this );
-      query.append( _qk, _q.key[_qk] );
-    }
-  } );
-  if ( queryParams ) queryParams.filter( p => args[p.index] !== undefined ).forEach( p =>
-  {
-    let queryKey, queryVal;
-    // don't uri encode flagged params
-    // if ( Object.values(p).indexOf(NO_ENCODE) !== -1 ) [ queryKey, queryVal ] = [ p.key, args[p.index] ];
-    // else [ queryKey, queryVal ] = [ standardEncoding(p.key), standardEncoding(args[p.index]) ];
-    return query.set( queryKey, queryVal );
-  } );
-  return query;
-};
-
 const buildPathParams = ( target, targetKey, args, requestUrl ) =>
 {
   const pathParams: any[] = ( Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey ) || [] ).filter( ( param: string ) => args[param[0]] !== undefined );
   if ( pathParams.length ) pathParams.forEach( param => requestUrl = requestUrl.replace( `{${param[1]}}`, args[param[0]] ) );
   return requestUrl;
-};
-
-const buildBody = ( target, targetKey, args ) =>
-{
-  let bodyParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Body, target, targetKey ),
-      body: any = {};
-  if ( bodyParams )
-  {
-    bodyParams = bodyParams.filter( paramTuple => args[ paramTuple[0] ] !== undefined );
-    // see if we got some Files inside
-    if ( bodyParams.some( param => args[param[0]] instanceof File || args[param[0]] instanceof FileList ) )
-    {
-      body = new FormData;
-      bodyParams.forEach( param =>
-      {
-        const bodyArg: File|File[] = args[param[0]];
-        if ( bodyArg instanceof FileList ) for ( const f of <File[]>bodyArg )
-          body.append( param[1] || 'files[]', f, f.name );
-        else if ( bodyArg instanceof File )
-          body.append( param[1] || 'files[]', bodyArg, bodyArg.name );
-        else
-          body.append( param[1] || 'params[]', bodyArg );
-      } );
-    }
-    // single unnamed body param, add value as is, usually string
-    else if ( bodyParams.length === 1 && bodyParams[0][1] === undefined ) body = args[bodyParams[0][0]];
-    // plain object
-    else bodyParams.map( param => ( { [param[1]]: args[param[0]] } ) ).forEach( param => Object.assign( body, param ) );
-  }
-  return body;
 };
 
 // builds request method decorators
@@ -104,7 +49,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
         requestUrl = buildPathParams( target, targetKey, args, url ),
 
         // query params
-        params = buildQueryParams.bind( this, target, targetKey, args ).call(),
+        params$ = buildQueryParameters( this, target, targetKey, args ),
 
         // process headers
         headers$ = buildHeaders( this, target, targetKey, args ),
@@ -117,9 +62,9 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
 
         errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor );
 
-      return zip( ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ), headers$ ).pipe
+      return zip( ( this.getBaseUrl ? this.getBaseUrl( requestUrl ) : of( '' ) ), headers$, params$ ).pipe
       (
-        switchMap( ( [ baseUrl, headers ] ) =>
+        switchMap( ( [ baseUrl, headers, params ] ) =>
         {
           const requestObject = new HttpRequest( method, baseUrl + requestUrl, body, { headers, params, responseType } );
           return handleCache( target, targetKey, this.http, requestObject )
@@ -168,30 +113,6 @@ export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | str
   };
 }
 
-export function Query( keyOrParams: any, ...extraOptions: any[] )
-{
-  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-  function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void;
-  function decorator( target: Object, propertyKey?: string | symbol, parameterIndex?: number ): void
-  {
-    if ( parameterIndex !== undefined ) // on param
-    {
-      const metadataKey = MetadataKeys.Query;
-      const existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
-      existingParams.push( { index: parameterIndex, key: keyOrParams, ...extraOptions } );
-      Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
-    }
-    else // on class
-    {
-      const metadataKey = MetadataKeys.Query;
-      const existingQuery: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingQuery.push( { index: undefined, key: keyOrParams } );
-      Reflect.defineMetadata( metadataKey, existingQuery, target, undefined );
-    }
-  }
-  return decorator;
-}
-
 export const Error = ( handler: ( ...args: any[] ) => any ) =>
   <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass =>
     Reflect.defineMetadata( MetadataKeys.Error, handler, target );
@@ -202,8 +123,6 @@ export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDec
 
 // define param decorators
 export const Path = parameterOrPropertyDecoratorFactory( 'Path' );
-export const Body = parameterOrPropertyDecoratorFactory( 'Body' );
-// export const Header = parameterOrPropertyDecoratorFactory( 'Header' );
 
 // define method decorators
 export const POST = requestMethodDecoratorFactory( 'POST' );
@@ -218,3 +137,5 @@ export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
 export { AbstractApiClient } from './+';
 export { Cache, CacheClear } from './cache';
 export { Headers, Header } from './headers';
+export { Query, NO_ENCODE } from './query';
+export { Body } from './body';

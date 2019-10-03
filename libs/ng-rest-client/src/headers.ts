@@ -10,8 +10,8 @@ import { DerivedAbstractApiClient, Reflect, MetadataKeys, AbstractApiClient } fr
 export const Headers = ( headers: {} ) =>
 {
   function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-  function decorator( target: Object, targetKey: string | symbol ): void;
-  function decorator( target: Object, targetKey?: string | symbol ): void
+  function decorator( target: AbstractApiClient, targetKey: string | symbol ): void;
+  function decorator( target: AbstractApiClient, targetKey?: string | symbol ): void
   {
     const metadataKey = MetadataKeys.Header;
     if ( targetKey !== undefined ) // method
@@ -74,8 +74,7 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
         else headers.push( headerForm$ );
         break;
       case Array.isArray( headerDef ): // parameter header
-        const [ paramPosition, headerKey ] = headerDef;
-        headers.push( of( { [headerKey]: args[ paramPosition ] } ) );
+        headers.push( of( { [ headerDef[1] ]: args[ headerDef[0] ] } ) );
         break;
       default: // is of Object type, method headers
         Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
@@ -83,15 +82,15 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
           switch ( true )
           {
             case headerForm instanceof Observable: // is from property decorator
-              headers.push( headerForm.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+              headers.push( headerForm.pipe( map( headerValue => ( { [ headerKey ]: headerValue } ) ) ) );
               break;
             case typeof headerForm === 'function':
               const headerValue$ = headerForm.call( undefined, thisArg );
-              if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [headerKey]: headerValue$ } ) );
-              else headers.push( headerValue$.pipe( map( headerValue => ( { [headerKey]: headerValue } ) ) ) );
+              if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [ headerKey ]: headerValue$ } ) );
+              else headers.push( headerValue$.pipe( map( headerValue => ( { [ headerKey ]: headerValue } ) ) ) );
               break;
             default:
-              headers.push( of( { [headerKey]: headerForm } ) );
+              headers.push( of( { [ headerKey ]: headerForm } ) );
           }
         } );
         break;

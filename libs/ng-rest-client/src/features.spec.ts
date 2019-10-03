@@ -1,9 +1,9 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Body, POST, GET, HEAD, Path } from '.';
-import { Observable, zip, of, throwError } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE } from '.';
+import { Observable, zip, BehaviorSubject } from 'rxjs';
+import { map, take } from 'rxjs/operators';
 
 describe( 'Common features', () =>
 {
@@ -19,20 +19,70 @@ describe( 'Common features', () =>
     VALUE_PATH_PARAM_1 = 'some-path-param',
     NAME_PATH_PARAM_2 = 'someOtherPathParam',
     VALUE_PATH_PARAM_2 = 'some-other-path-param',
-    PATH_PARAM_URL = `some/{${NAME_PATH_PARAM_1}}/url/{${NAME_PATH_PARAM_2}}`
-    ;
+    PATH_PARAM_URL = `some/{${NAME_PATH_PARAM_1}}/url/{${NAME_PATH_PARAM_2}}`,
+    NAME_CLASS_WIDE_QUERY_PARAM_1 = 'someClassWideQueryParam',
+    VALUE_CLASS_WIDE_QUERY_PARAM_1 = 'some-class-wide-query[param]',
+    NAME_CLASS_WIDE_QUERY_PARAM_2 = 'abc',
+    VALUE_CLASS_WIDE_QUERY_PARAM_2 = 'def',
+    NAME_QUERY_PARAM_1 = 'someQueryParam',
+    VALUE_QUERY_PARAM_1 = 'some-query[param]',
+    NAME_QUERY_PARAM_2 = 'someOtherQueryParam',
+    VALUE_QUERY_PARAM_2 = 'some[other]{query+param}',
+    NAME_QUERY_PARAM_3 = 'yetAnotherQueryParam',
+    VALUE_QUERY_PARAM_31 = 'yet-another-query-param',
+    VALUE_QUERY_PARAM_32 = 'and-yet-another-query-param';
   let httpTestingController: HttpTestingController;
 
+  class MockService
+  {
+    public readonly someSubject = new BehaviorSubject( {} );
+  }
+
+  @Query
+  ( {
+    [ NAME_CLASS_WIDE_QUERY_PARAM_1 ]: VALUE_CLASS_WIDE_QUERY_PARAM_1,
+    [ NAME_CLASS_WIDE_QUERY_PARAM_2 ]: VALUE_CLASS_WIDE_QUERY_PARAM_2
+  } )
+  // class-wide Query value from function at runtime for current method
+  @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ) )
   class ApiClient extends AbstractApiClient
   {
-    @POST( SOME_URL )
-    testBody( @Body( NAME_BODY_PARAM_1 ) b1: string, @Body( NAME_BODY_PARAM_2 ) b2: string ): Observable<any> { return; }
+    constructor
+    (
+      protected readonly http: HttpClient,
+      public readonly mockService: MockService
+    ) { super( http ); }
 
     @POST( SOME_URL )
-    testFileBody( @Body( NAME_BODY_PARAM_1 ) b1: File, @Body( NAME_BODY_PARAM_2 ) b2: File, @Body( NAME_BODY_PARAM_3 ) b3: string ): Observable<any> { return; }
+    testBody
+    (
+      @Body( NAME_BODY_PARAM_1 ) body1: string,
+      @Body( NAME_BODY_PARAM_2 ) body2: string
+    ): Observable<any> { return; }
+
+    @POST( SOME_URL )
+    testFileBody
+    (
+      @Body( NAME_BODY_PARAM_1 ) body1: File,
+      @Body( NAME_BODY_PARAM_2 ) body2: File,
+      @Body( NAME_BODY_PARAM_3 ) body3: string
+    ): Observable<any> { return; }
 
     @HEAD( PATH_PARAM_URL )
-    testPathParam( @Path( NAME_PATH_PARAM_1 ) p1: string, @Path( NAME_PATH_PARAM_2 ) p2: string ): Observable<any> { return; }
+    testPathParam
+    (
+      @Path( NAME_PATH_PARAM_1 ) path1: string,
+      @Path( NAME_PATH_PARAM_2 ) path2: string
+    ): Observable<any> { return; }
+
+    @HEAD( SOME_URL )
+    testQuery
+    (
+      @Query( NAME_QUERY_PARAM_1 ) query1: string,
+      @Query( NAME_QUERY_PARAM_2, NO_ENCODE ) query2: string,
+      @Query( NAME_QUERY_PARAM_3 ) query31: string,
+      @Query( NAME_QUERY_PARAM_3 ) query32: string,
+    ): Observable<any> { return; }
   }
 
   beforeEach( () =>
@@ -42,18 +92,33 @@ describe( 'Common features', () =>
       imports: [ HttpClientTestingModule ],
       providers:
       [
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ) ) },
+        MockService,
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ), TestBed.get( MockService ) ) },
       ]
     } );
     httpTestingController = TestBed.get( HttpTestingController );
   } );
 
+  fit( 'should add query parameters', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    apiClient.testQuery( VALUE_QUERY_PARAM_1, VALUE_QUERY_PARAM_2, VALUE_QUERY_PARAM_31, VALUE_QUERY_PARAM_32 ).subscribe();
+    httpTestingController.expectOne( ( { params } ) =>
+    {
+      const paramsParts = params.toString().split( '&' );
+      debugger;
+      return paramsParts.includes( `${NAME_QUERY_PARAM_1}=${encodeURIComponent( VALUE_QUERY_PARAM_1 )}` )
+        && paramsParts.includes( `${NAME_QUERY_PARAM_2}=${VALUE_QUERY_PARAM_2}` )
+        && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_31}` )
+        && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_32}` );
+    } );
+  } ) );
+
   it( 'should add path parameters', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
   {
     apiClient.testPathParam( VALUE_PATH_PARAM_1, VALUE_PATH_PARAM_2 ).subscribe();
-    httpTestingController.expectOne( `some/${VALUE_PATH_PARAM_1}/url/${VALUE_PATH_PARAM_2}` ).flush( null );
+    httpTestingController.expectOne( ( { url } ) => url === `some/${VALUE_PATH_PARAM_1}/url/${VALUE_PATH_PARAM_2}` ).flush( null );
     apiClient.testPathParam( VALUE_PATH_PARAM_2, VALUE_PATH_PARAM_1 ).subscribe();
-    httpTestingController.expectOne( `some/${VALUE_PATH_PARAM_2}/url/${VALUE_PATH_PARAM_1}` ).flush( null );
+    httpTestingController.expectOne( ( { url } ) => url === `some/${VALUE_PATH_PARAM_2}/url/${VALUE_PATH_PARAM_1}` ).flush( null );
   } ) );
 
   it( 'should add simple JSON body params', inject( [ ApiClient ], ( apiClient: ApiClient ) =>

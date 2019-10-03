@@ -21,7 +21,6 @@ export const extend = <T, U>( target: T, source: U ): T & U =>
 // abstract Api class
 export abstract class AbstractApiClient
 {
-  private _testRandom = Math.random();
   constructor( @Inject( HttpClient ) protected http: HttpClient ) { }
 }
 export interface DerivedAbstractApiClient { new ( ...args: any[] ): AbstractApiClient; }

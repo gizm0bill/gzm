@@ -1,6 +1,6 @@
 import { HttpEvent, HttpHeaders, HttpRequest, HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { isObject, Reflect, MetadataKeys, MethodNames, AbstractApiClient, extend } from './+';
+import { isObject, Reflect, MetadataKeys, MethodNames, AbstractApiClient, extend, DerivedAbstractApiClient } from './+';
 import { shareReplay } from 'rxjs/operators';
 
 export const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
@@ -34,7 +34,7 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
           cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
         break;
   }
-  return ( target: Object, targetKey?: string | symbol ): void =>
+  return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
   {
     const targetKeyString = targetKey.toString();
     Object.defineProperty( target,
