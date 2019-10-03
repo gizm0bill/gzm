@@ -3,7 +3,7 @@ import { DerivedAbstractApiClient, MetadataKeys, Reflect, AbstractApiClient } fr
 import { Observable, of, zip } from 'rxjs';
 import { defaultIfEmpty, map } from 'rxjs/operators';
 
-const standardEncoding = ( value: string ): string =>
+export const standardEncoding = ( value: string ): string =>
   encodeURIComponent( value )
     .replace( /%40/gi, '@' )
     .replace( /%3A/gi, ':' )
@@ -57,7 +57,7 @@ export const NO_ENCODE = Symbol( 'apiClient:Query.noEncode' );
 export const buildQueryParameters = ( thisArg: AbstractApiClient, target, targetKey, args: any[] ): Observable<any> =>
 {
   const
-    query: Observable<any>[] = [],
+    query: Observable<any[]>[] = [],
     classWideQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target.constructor ) || [],
     methodQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey ) || [],
     propertyQuery = ( Reflect.getOwnMetadata( MetadataKeys.Query, target ) || [] )
@@ -67,17 +67,16 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target, target
         queryDef
       ) );
 
-  [ ...propertyQuery, ...classWideQuery, ...methodQuery ].forEach( ( queryDef: Function & Object & any[] ) =>
+  [ ...propertyQuery, ...classWideQuery, ...methodQuery ].forEach( ( [ paramIndex, queryDef, ...extraOptions ]: [ number, Function & Object & string, ...any[] ] ) =>
   {
     switch ( true )
     {
       case typeof queryDef === 'function':
         const queryForm$ = queryDef.call( undefined, thisArg );
-        if ( !( queryForm$ instanceof Observable ) ) query.push( of( queryForm$ ) );
-        else query.push( queryForm$ );
+        query.push( ( !( queryForm$ instanceof Observable ) ? of( queryForm$ ) : queryForm$ ).pipe( map( data => [ data, ...extraOptions ] ) ) );
         break;
-      case Array.isArray( queryDef ): // parameter query
-        query.push( of( { [ queryDef[1] ]: args[ queryDef[0] ] } ) );
+      case paramIndex !== undefined: // parameter query
+        query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
       default: // is of Object type, method query
         Object.entries( queryDef ).forEach( ( [ queryKey, queryForm ]: [ string, Function|any ] ) =>
@@ -89,26 +88,30 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target, target
               break;
             case typeof queryForm === 'function':
               const queryValue$ = queryForm.call( undefined, thisArg );
-              if ( !( queryValue$ instanceof Observable ) ) query.push( of( { [ queryKey ]: queryValue$ } ) );
-              else query.push( queryValue$.pipe( map( queryValue => ( { [ queryKey ]: queryValue } ) ) ) );
+              if ( !( queryValue$ instanceof Observable ) ) query.push( of( [ { [ queryKey ]: queryValue$ }, ...extraOptions ] ) );
+              else query.push( queryValue$.pipe( map( queryValue => ( [ { [ queryKey ]: queryValue }, ...extraOptions ] ) ) ) );
               break;
             default:
-              query.push( of( { [ queryKey ]: queryForm } ) );
+              query.push( of( [ { [ queryKey ]: queryForm }, ...extraOptions ] ) );
           }
         } );
     }
   } );
-  debugger;
   return zip( ...query ).pipe
   (
     defaultIfEmpty( [] ),
-    map( ( ...args: any[] ) => { debugger; return args; } ),
-    // map( queryResults => new HttpQuery( queryResults.reduce( ( queryObject, currentHeaderResults ) =>
-    // (
-    //   Object.entries( currentHeaderResults ).forEach( ( [ queryKey, queryValue ] ) =>
-    //     queryObject[ queryKey ] = [ ...( queryObject[ queryKey ] || [] ), ...( Array.isArray( queryValue ) ? queryValue : [ queryValue ] ) ] ),
-    //   queryObject
-    // ), {} ) ) ),
+    map( queryResults => new HttpParams( { fromObject: queryResults.reduce( ( queryObject, [ queryResult, ...extraOptions ]: [ any, ...any[] ] ) =>
+    (
+      Object.entries( queryResult ).forEach( ( [ queryKey, queryValue ]: [ string, string|string[] ] ) =>
+      {
+        queryValue = Array.isArray( queryValue )
+          ? queryValue.map( value => !extraOptions.includes( NO_ENCODE ) ? standardEncoding( value ) : value )
+          : [ !extraOptions.includes( NO_ENCODE ) ? standardEncoding( queryValue ) : queryValue ];
+        if ( !extraOptions.includes( NO_ENCODE ) ) queryKey = standardEncoding( queryKey );
+        queryObject[ queryKey ] = [ ...( queryObject[ queryKey ] || [] ), ...queryValue ];
+      } ),
+      queryObject
+    ), {} ), encoder: new PassThroughCodec } ) ),
   );
 };
 
@@ -122,7 +125,7 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
     if ( parameterIndex !== undefined ) // on param
     {
       const metadataKey = MetadataKeys.Query;
-      const existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
+      const existingParams: [ number, string, ...any[] ][] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
       existingParams.push( [ parameterIndex, keyOrParams, ...extraOptions ] );
       Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
     }
@@ -130,7 +133,7 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
     {
       const metadataKey = MetadataKeys.Query;
       const existingQuery: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingQuery.push( keyOrParams );
+      existingQuery.push( [ undefined, keyOrParams, ...extraOptions ] );
       Reflect.defineMetadata( metadataKey, existingQuery, target, undefined );
     }
   }

@@ -1,9 +1,10 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE } from '.';
 import { Observable, zip, BehaviorSubject } from 'rxjs';
 import { map, take } from 'rxjs/operators';
+import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE } from '.';
+import { standardEncoding } from './query';
 
 describe( 'Common features', () =>
 {
@@ -22,8 +23,8 @@ describe( 'Common features', () =>
     PATH_PARAM_URL = `some/{${NAME_PATH_PARAM_1}}/url/{${NAME_PATH_PARAM_2}}`,
     NAME_CLASS_WIDE_QUERY_PARAM_1 = 'someClassWideQueryParam',
     VALUE_CLASS_WIDE_QUERY_PARAM_1 = 'some-class-wide-query[param]',
-    NAME_CLASS_WIDE_QUERY_PARAM_2 = 'abc',
-    VALUE_CLASS_WIDE_QUERY_PARAM_2 = 'def',
+    NAME_CLASS_WIDE_QUERY_PARAM_2 = 'anotherClassWideQueryParam',
+    VALUE_CLASS_WIDE_QUERY_PARAM_2 = 'another-class-wide-query{param}',
     NAME_QUERY_PARAM_1 = 'someQueryParam',
     VALUE_QUERY_PARAM_1 = 'some-query[param]',
     NAME_QUERY_PARAM_2 = 'someOtherQueryParam',
@@ -44,7 +45,7 @@ describe( 'Common features', () =>
     [ NAME_CLASS_WIDE_QUERY_PARAM_2 ]: VALUE_CLASS_WIDE_QUERY_PARAM_2
   } )
   // class-wide Query value from function at runtime for current method
-  @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ) )
+  @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ), NO_ENCODE )
   class ApiClient extends AbstractApiClient
   {
     constructor
@@ -99,17 +100,25 @@ describe( 'Common features', () =>
     httpTestingController = TestBed.get( HttpTestingController );
   } );
 
-  fit( 'should add query parameters', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  it( 'should add query parameters', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
+    mockService.someSubject.next
+    ( {
+      [ NAME_CLASS_WIDE_QUERY_PARAM_1 ]: VALUE_CLASS_WIDE_QUERY_PARAM_1,
+      [ NAME_CLASS_WIDE_QUERY_PARAM_2 ]: VALUE_CLASS_WIDE_QUERY_PARAM_2
+    } );
     apiClient.testQuery( VALUE_QUERY_PARAM_1, VALUE_QUERY_PARAM_2, VALUE_QUERY_PARAM_31, VALUE_QUERY_PARAM_32 ).subscribe();
     httpTestingController.expectOne( ( { params } ) =>
     {
       const paramsParts = params.toString().split( '&' );
-      debugger;
-      return paramsParts.includes( `${NAME_QUERY_PARAM_1}=${encodeURIComponent( VALUE_QUERY_PARAM_1 )}` )
+      return paramsParts.includes( `${NAME_QUERY_PARAM_1}=${standardEncoding( VALUE_QUERY_PARAM_1 )}` )
         && paramsParts.includes( `${NAME_QUERY_PARAM_2}=${VALUE_QUERY_PARAM_2}` )
         && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_31}` )
-        && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_32}` );
+        && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_32}` )
+        && paramsParts.includes( `${NAME_CLASS_WIDE_QUERY_PARAM_1}=${standardEncoding( VALUE_CLASS_WIDE_QUERY_PARAM_1 )}` )
+        && paramsParts.includes( `${NAME_CLASS_WIDE_QUERY_PARAM_1}=${VALUE_CLASS_WIDE_QUERY_PARAM_1}` )
+        && paramsParts.includes( `${NAME_CLASS_WIDE_QUERY_PARAM_2}=${standardEncoding( VALUE_CLASS_WIDE_QUERY_PARAM_2 )}` )
+        && paramsParts.includes( `${NAME_CLASS_WIDE_QUERY_PARAM_2}=${VALUE_CLASS_WIDE_QUERY_PARAM_2}` );
     } );
   } ) );
 
