@@ -21,7 +21,7 @@ export const extend = <T, U>( target: T, source: U ): T & U =>
 // abstract Api class
 export abstract class AbstractApiClient
 {
-  constructor( @Inject( HttpClient ) protected http: HttpClient ) { }
+  constructor( @Inject( HttpClient ) protected http: HttpClient ) {}
 }
 export interface DerivedAbstractApiClient { new ( ...args: any[] ): AbstractApiClient; }
 export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[ keyof T ];
@@ -29,6 +29,7 @@ export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never
 // reflect metadata key symbols
 export const MetadataKeys =
 {
+  BaseUrl: Symbol( 'apiClient:BaseUrl' ),
   Query: Symbol( 'apiClient:Query' ),
   Path: Symbol( 'apiClient:Path' ),
   Body: Symbol( 'apiClient:Body' ),

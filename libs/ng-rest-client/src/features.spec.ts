@@ -1,9 +1,9 @@
 import { TestBed, inject } from '@angular/core/testing';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { Observable, zip, BehaviorSubject } from 'rxjs';
+import { Observable, zip, BehaviorSubject, throwError } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE } from '.';
+import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, Error as ApiError } from '.';
 import { standardEncoding } from './query';
 
 describe( 'Common features', () =>
@@ -46,8 +46,11 @@ describe( 'Common features', () =>
   } )
   // class-wide Query value from function at runtime for current method
   @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ), NO_ENCODE )
+  @ApiError( ( { uniqueTestKey }: ApiClient, { status, statusText }: HttpErrorResponse, { url }: HttpRequest<any> ): Observable<string> =>
+    throwError( new Error( [ status, statusText, url, uniqueTestKey ].join() ) ) )
   class ApiClient extends AbstractApiClient
   {
+    uniqueTestKey = Math.random();
     constructor
     (
       protected readonly http: HttpClient,
@@ -84,6 +87,34 @@ describe( 'Common features', () =>
       @Query( NAME_QUERY_PARAM_3 ) query31: string,
       @Query( NAME_QUERY_PARAM_3 ) query32: string,
     ): Observable<any> { return; }
+
+    @HEAD( SOME_URL ) testError(): Observable<any> { return; }
+  }
+
+  const
+    CONFIG_JSON = 'test-config-location.json',
+    CONFIG_JSON_KEY = 'base-url',
+    CONFIG_JSON_VALUE = 'some/base/url/';
+
+  // static base url value
+  @BaseUrl( CONFIG_JSON_VALUE )
+  class ApiClientA extends AbstractApiClient
+  {
+    @HEAD( SOME_URL ) public testBaseUrlA(): Observable<Response> { return; }
+  }
+
+  // get base url from some json path and extract value by provided key
+  @BaseUrl( CONFIG_JSON, CONFIG_JSON_KEY )
+  class ApiClientB extends AbstractApiClient
+  {
+    @HEAD( SOME_URL ) public testBaseUrlB(): Observable<Response> { return; }
+  }
+
+  // get base url from Observable
+  @BaseUrl( ( thisArg: ApiClientC ) => thisArg.http.get( CONFIG_JSON ).pipe( map( response => response[ CONFIG_JSON_KEY ] ) ) )
+  class ApiClientC extends AbstractApiClient
+  {
+    @HEAD( SOME_URL ) public testBaseUrlC(): Observable<Response> { return; }
   }
 
   beforeEach( () =>
@@ -95,10 +126,43 @@ describe( 'Common features', () =>
       [
         MockService,
         { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ), TestBed.get( MockService ) ) },
+        { provide: ApiClientA, useFactory: () => new ApiClientA( TestBed.get( HttpClient ) ) },
+        { provide: ApiClientB, useFactory: () => new ApiClientB( TestBed.get( HttpClient ) ) },
+        { provide: ApiClientC, useFactory: () => new ApiClientC( TestBed.get( HttpClient ) ) },
       ]
     } );
     httpTestingController = TestBed.get( HttpTestingController );
   } );
+
+  it( 'should handle errors', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    const
+      STATUS_NUMBER = 500,
+      STATUS_MESSAGE = 'Internal Server Error';
+    apiClient.testError().subscribe
+    (
+      data => fail( `should have failed with 500, instead got data: ${data}` ),
+      ( { message } ) => expect( message ).toEqual( [ STATUS_NUMBER, STATUS_MESSAGE, SOME_URL, apiClient.uniqueTestKey ].join() )
+    );
+    httpTestingController.expectOne( () => true ).flush( '', { status: STATUS_NUMBER, statusText: STATUS_MESSAGE } );
+  } ) );
+
+  it( 'should add base url', inject( [ ApiClientA, ApiClientB, ApiClientC ], ( apiClientA: ApiClientA, apiClientB: ApiClientB, apiClientC: ApiClientC ) =>
+  {
+    apiClientA.testBaseUrlA().subscribe();
+    httpTestingController.expectOne( CONFIG_JSON_VALUE + SOME_URL ).flush( null );
+
+    apiClientB.testBaseUrlB().subscribe();
+    const [ baseUrlRequestB ] = httpTestingController.match( CONFIG_JSON );
+    baseUrlRequestB.flush( { [ CONFIG_JSON_KEY ]: CONFIG_JSON_VALUE } );
+    httpTestingController.expectOne( CONFIG_JSON_VALUE + SOME_URL ).flush( null );
+
+    apiClientC.testBaseUrlC().subscribe();
+    const [ baseUrlRequestC ] = httpTestingController.match( CONFIG_JSON );
+    baseUrlRequestC.flush( { [ CONFIG_JSON_KEY ]: CONFIG_JSON_VALUE } );
+    httpTestingController.expectOne( CONFIG_JSON_VALUE + SOME_URL ).flush( null );
+
+  } ) );
 
   it( 'should add query parameters', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
