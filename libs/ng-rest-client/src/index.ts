@@ -1,8 +1,8 @@
 /// <reference path="typings.d.ts" />
 
 import { HttpClient, HttpRequest, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError, from, zip } from 'rxjs';
-import { switchMap, catchError, takeLast, share, map, tap } from 'rxjs/operators';
+import { Observable, throwError, zip } from 'rxjs';
+import { switchMap, catchError, takeLast, share } from 'rxjs/operators';
 import { Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';

@@ -3,19 +3,19 @@ import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Observable, zip, BehaviorSubject, throwError } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, Error as ApiError } from '.';
+import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, Error as ApiError, GET, Type } from '.';
 import { standardEncoding } from './query';
 
 describe( 'Common features', () =>
 {
   const
     SOME_URL = 'some-url',
-    NAME_BODY_PARAM_1  = 'someBodyParam',
-    VALUE_BODY_PARAM_1  = 'some-body-param',
-    NAME_BODY_PARAM_2  = 'someOtherBodyParam',
-    VALUE_BODY_PARAM_2  = 'some-other-body-param',
-    NAME_BODY_PARAM_3  = 'yetAnotherBodyParam',
-    VALUE_BODY_PARAM_3  = 'yet-another-body-param',
+    NAME_BODY_PARAM_1 = 'someBodyParam',
+    VALUE_BODY_PARAM_1 = 'some-body-param',
+    NAME_BODY_PARAM_2 = 'someOtherBodyParam',
+    VALUE_BODY_PARAM_2 = 'some-other-body-param',
+    NAME_BODY_PARAM_3 = 'yetAnotherBodyParam',
+    VALUE_BODY_PARAM_3 = 'yet-another-body-param',
     NAME_PATH_PARAM_1 = 'somePathParam',
     VALUE_PATH_PARAM_1 = 'some-path-param',
     NAME_PATH_PARAM_2 = 'someOtherPathParam',
@@ -31,70 +31,16 @@ describe( 'Common features', () =>
     VALUE_QUERY_PARAM_2 = 'some[other]{query+param}',
     NAME_QUERY_PARAM_3 = 'yetAnotherQueryParam',
     VALUE_QUERY_PARAM_31 = 'yet-another-query-param',
-    VALUE_QUERY_PARAM_32 = 'and-yet-another-query-param';
+    VALUE_QUERY_PARAM_32 = 'and-yet-another-query-param',
+    CONFIG_JSON = 'test-config-location.json',
+    CONFIG_JSON_KEY = 'base-url',
+    CONFIG_JSON_VALUE = 'some/base/url/';
   let httpTestingController: HttpTestingController;
 
   class MockService
   {
     public readonly someSubject = new BehaviorSubject( {} );
   }
-
-  @Query
-  ( {
-    [ NAME_CLASS_WIDE_QUERY_PARAM_1 ]: VALUE_CLASS_WIDE_QUERY_PARAM_1,
-    [ NAME_CLASS_WIDE_QUERY_PARAM_2 ]: VALUE_CLASS_WIDE_QUERY_PARAM_2
-  } )
-  // class-wide Query value from function at runtime for current method
-  @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ), NO_ENCODE )
-  @ApiError( ( { uniqueTestKey }: ApiClient, { status, statusText }: HttpErrorResponse, { url }: HttpRequest<any> ): Observable<string> =>
-    throwError( new Error( [ status, statusText, url, uniqueTestKey ].join() ) ) )
-  class ApiClient extends AbstractApiClient
-  {
-    uniqueTestKey = Math.random();
-    constructor
-    (
-      protected readonly http: HttpClient,
-      public readonly mockService: MockService
-    ) { super( http ); }
-
-    @POST( SOME_URL )
-    testBody
-    (
-      @Body( NAME_BODY_PARAM_1 ) body1: string,
-      @Body( NAME_BODY_PARAM_2 ) body2: string
-    ): Observable<any> { return; }
-
-    @POST( SOME_URL )
-    testFileBody
-    (
-      @Body( NAME_BODY_PARAM_1 ) body1: File,
-      @Body( NAME_BODY_PARAM_2 ) body2: File,
-      @Body( NAME_BODY_PARAM_3 ) body3: string
-    ): Observable<any> { return; }
-
-    @HEAD( PATH_PARAM_URL )
-    testPathParam
-    (
-      @Path( NAME_PATH_PARAM_1 ) path1: string,
-      @Path( NAME_PATH_PARAM_2 ) path2: string
-    ): Observable<any> { return; }
-
-    @HEAD( SOME_URL )
-    testQuery
-    (
-      @Query( NAME_QUERY_PARAM_1 ) query1: string,
-      @Query( NAME_QUERY_PARAM_2, NO_ENCODE ) query2: string,
-      @Query( NAME_QUERY_PARAM_3 ) query31: string,
-      @Query( NAME_QUERY_PARAM_3 ) query32: string,
-    ): Observable<any> { return; }
-
-    @HEAD( SOME_URL ) testError(): Observable<any> { return; }
-  }
-
-  const
-    CONFIG_JSON = 'test-config-location.json',
-    CONFIG_JSON_KEY = 'base-url',
-    CONFIG_JSON_VALUE = 'some/base/url/';
 
   // static base url value
   @BaseUrl( CONFIG_JSON_VALUE )
@@ -117,6 +63,63 @@ describe( 'Common features', () =>
     @HEAD( SOME_URL ) public testBaseUrlC(): Observable<Response> { return; }
   }
 
+  @Query
+  ( {
+    [ NAME_CLASS_WIDE_QUERY_PARAM_1 ]: VALUE_CLASS_WIDE_QUERY_PARAM_1,
+    [ NAME_CLASS_WIDE_QUERY_PARAM_2 ]: VALUE_CLASS_WIDE_QUERY_PARAM_2
+  } )
+  // class-wide Query value from function at runtime for current method
+  @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ), NO_ENCODE )
+  @ApiError( ( { uniqueTestKey }: ApiClient, { status, statusText }: HttpErrorResponse, { url }: HttpRequest<any> ): Observable<string> =>
+    throwError( new Error( [ status, statusText, url, uniqueTestKey ].join() ) ) )
+  class ApiClient extends AbstractApiClient
+  {
+    uniqueTestKey = Math.random();
+    constructor
+    (
+      protected readonly http: HttpClient,
+      public readonly mockService: MockService
+    ) { super( http ); }
+
+    @POST( SOME_URL ) testBody
+    (
+      @Body( NAME_BODY_PARAM_1 ) body1: string,
+      @Body( NAME_BODY_PARAM_2 ) body2: string
+    ): Observable<any> { return; }
+
+    @POST( SOME_URL ) testFileBody
+    (
+      @Body( NAME_BODY_PARAM_1 ) body1: File,
+      @Body( NAME_BODY_PARAM_2 ) body2: File,
+      @Body( NAME_BODY_PARAM_3 ) body3: string
+    ): Observable<any> { return; }
+
+    @HEAD( PATH_PARAM_URL ) testPathParam
+    (
+      @Path( NAME_PATH_PARAM_1 ) path1: string,
+      @Path( NAME_PATH_PARAM_2 ) path2: string
+    ): Observable<any> { return; }
+
+    @HEAD( SOME_URL ) testQuery
+    (
+      @Query( NAME_QUERY_PARAM_1 ) query1: string,
+      @Query( NAME_QUERY_PARAM_2, NO_ENCODE ) query2: string,
+      @Query( NAME_QUERY_PARAM_3 ) query31: string,
+      @Query( NAME_QUERY_PARAM_3 ) query32: string,
+    ): Observable<any> { return; }
+
+    @HEAD( SOME_URL ) testError(): Observable<any> { return; }
+
+    @GET( SOME_URL ) @Type( 'blob' ) testBlobType(): Observable<any> { return; }
+
+    @GET( SOME_URL ) @Type( 'arraybuffer' ) testArrayBufferType(): Observable<any> { return; }
+
+    @GET( SOME_URL ) @Type( 'json' ) testJSONType(): Observable<any> { return; }
+
+    @GET( SOME_URL ) @Type( 'text' ) testTextType(): Observable<any> { return; }
+
+  }
+
   beforeEach( () =>
   {
     TestBed.configureTestingModule
@@ -133,6 +136,21 @@ describe( 'Common features', () =>
     } );
     httpTestingController = TestBed.get( HttpTestingController );
   } );
+
+  it( 'should get correct type', inject( [ ApiClient, HttpClient ], ( apiClient: ApiClient, httpClient: HttpClient ) =>
+  {
+    apiClient.testBlobType().subscribe( ( { body } ) => expect( body instanceof Blob ).toBeTruthy() );
+    httpTestingController.expectOne( () => true ).flush( new Uint16Array( [ 1, 2, 3 ] ).buffer );
+
+    apiClient.testArrayBufferType().subscribe( ( { body } ) => expect( body instanceof ArrayBuffer ).toBeTruthy() );
+    httpTestingController.expectOne( () => true ).flush( new Uint16Array( [ 1, 2, 3 ] ).buffer );
+
+    apiClient.testJSONType().subscribe( ( { body } ) => expect( body.some ).toBe( 'value' ) );
+    httpTestingController.expectOne( () => true ).flush( { some: 'value' } as any );
+
+    apiClient.testTextType().subscribe( ( { body } ) => expect( body ).toBe( 'some-value' ) );
+    httpTestingController.expectOne( () => true ).flush( 'some-value' );
+  } ) );
 
   it( 'should handle errors', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
   {
