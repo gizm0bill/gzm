@@ -97,6 +97,5 @@ describe( 'Cache', () =>
     expect( requests3.length ).toEqual( 0 );
   } ) ) );
 
-
   afterEach( () => httpTestingController.verify() );
 } );

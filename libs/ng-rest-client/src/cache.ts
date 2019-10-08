@@ -1,6 +1,6 @@
 import { HttpEvent, HttpHeaders, HttpRequest, HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { isObject, Reflect, MetadataKeys, MethodNames, AbstractApiClient, extend, DerivedAbstractApiClient } from './+';
+import { isObject, Reflect, MetadataKeys, MethodNames, AbstractApiClient, DerivedAbstractApiClient } from './+';
 import { shareReplay } from 'rxjs/operators';
 
 export const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
@@ -9,13 +9,12 @@ export interface ICacheOptions
 {
   until?: number;
   times?: number;
-  clearMethodPrefix: string;
 }
 // TODO: add until date
 // TODO: add each times
 export const Cache = ( options?: number | string | ICacheOptions ): MethodDecorator =>
 {
-  const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
+  const cacheOptions: ICacheOptions = { };
   switch ( true )
   {
     case typeof options === 'number':
@@ -30,26 +29,10 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
     case isObject( cacheOptions ) && !!options:
         cacheOptions.until = ( options as ICacheOptions ).until || undefined;
         cacheOptions.times = ( options as ICacheOptions ).times || undefined;
-        if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
-          cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
         break;
   }
   return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
-  {
-    const targetKeyString = targetKey.toString();
-    Object.defineProperty( target,
-      `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
-      {
-        writable: false,
-        value: function()
-        {
-          Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
-          return this;
-        }
-    } );
-    // Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
     Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
-  };
 };
 
 export const CacheClear = <TClass extends AbstractApiClient>( targetKey: MethodNames<TClass> ) =>
@@ -111,7 +94,7 @@ export const handleCache =
   if ( !returnRequest ) // first cache request
   {
     returnRequest = httpClient.request( requestObject ).pipe( shareReplay() );
-    const saveCacheOptions = extend( {}, cacheOptions );
+    const saveCacheOptions = Object.assign( {}, cacheOptions );
     saveCacheOptions.until = cacheOptions.until && ( +new Date ) + cacheOptions.until;
     cacheMap.set( cacheMapKey, [ returnRequest, saveCacheOptions ] );
   }

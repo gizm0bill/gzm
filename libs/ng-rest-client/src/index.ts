@@ -21,23 +21,19 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
         throw new TypeError( `Property 'http' missing in ${this.constructor}. Check constructor dependencies!` );
 
       const
-        // path params
+        // hanle @Path
         requestUrl = buildPathParams( target, targetKey, args, url ),
-
-        // query params
+        // hanle @Query
         params$ = buildQueryParameters( this, target, targetKey, args ),
-
-        // process headers
+        // handle @Headers
         headers$ = buildHeaders( this, target, targetKey, args ),
-
         // handle @Body
         body = buildBody( target, targetKey, args ),
-
         // handle @Type
         responseType = Reflect.getOwnMetadata( MetadataKeys.Type, target, targetKey ),
-
+        // handle @Error
         errorHandler = Reflect.getOwnMetadata( MetadataKeys.Error, target.constructor ),
-
+        // handle @BaseUrl
         baseUrl$ = getBaseUrl( this, target );
 
       let requestObject: HttpRequest<any>;
@@ -53,11 +49,9 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
         catchError( ( error: HttpErrorResponse, caught: Observable<any> ) => errorHandler
           ? errorHandler( this, error, requestObject, caught )
           : throwError( error ) ),
-
         // TODO: do something with method body...
         // oldValue.call(this, observable)
       );
-
     },
     descriptor
   );
