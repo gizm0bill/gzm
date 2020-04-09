@@ -1,6 +1,6 @@
-import { Reflect, MetadataKeys, DerivedAbstractApiClient } from './+';
+import { Reflect, MetadataKeys, DerivedAbstractApiClient, AbstractApiClient } from './+';
 
-export const buildBody = ( target, targetKey, args ) =>
+export const buildBody = ( target: AbstractApiClient, targetKey: string | symbol, args: any[] ) =>
 {
   let bodyParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Body, target, targetKey ),
       body: any = {};
@@ -14,7 +14,7 @@ export const buildBody = ( target, targetKey, args ) =>
       bodyParams.forEach( param =>
       {
         const bodyArg: File|File[] = args[param[0]];
-        if ( bodyArg instanceof FileList ) for ( const f of <File[]>bodyArg )
+        if ( bodyArg instanceof FileList ) for ( const f of bodyArg as File[] )
           body.append( param[1] || 'files[]', f, f.name );
         else if ( bodyArg instanceof File )
           body.append( param[1] || 'files[]', bodyArg, bodyArg.name );
@@ -36,7 +36,7 @@ export const Body = ( key?: string, ...extraOptions: any[] ) =>
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined,
       metadataKey = MetadataKeys.Body,
-      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
+      existingParams: any[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
     existingParams.push( parameterIndex !== undefined ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
     Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );

@@ -1,4 +1,5 @@
-import { Inject } from '@angular/core';
+import 'reflect-metadata';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export const isObject = ( item: any ) => ( item && typeof item === 'object' && !Array.isArray( item ) && item !== null );
@@ -19,12 +20,14 @@ export const extend = <T, U>( target: T, source: U ): T & U =>
 };
 
 // abstract Api class
+@Injectable()
 export abstract class AbstractApiClient
 {
-  constructor( @Inject( HttpClient ) protected http: HttpClient ) {}
+  protected http: HttpClient;
+  constructor() { this.http = inject( HttpClient ); }
 }
-export interface DerivedAbstractApiClient { new ( ...args: any[] ): AbstractApiClient; }
-export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[ keyof T ];
+export type DerivedAbstractApiClient = new ( ...args: any[] ) => AbstractApiClient;
+export type MethodNames<T> = { [K in keyof T]: T[K] extends () => void ? K : never }[ keyof T ];
 
 // reflect metadata key symbols
 export const MetadataKeys =

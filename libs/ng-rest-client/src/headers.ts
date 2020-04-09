@@ -7,7 +7,7 @@ import { DerivedAbstractApiClient, Reflect, MetadataKeys, AbstractApiClient } fr
  * class decorator
  * method decorator
  */
-export const Headers = ( headers: {} ) =>
+export function Headers( headers: {} )
 {
   function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
   function decorator( target: AbstractApiClient, targetKey: string | symbol ): void;
@@ -16,25 +16,25 @@ export const Headers = ( headers: {} ) =>
     const metadataKey = MetadataKeys.Header;
     if ( targetKey !== undefined ) // method
     {
-      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
+      const existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
       existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
     }
     else // class type
     {
-      const existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+      const existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
       existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
     }
   }
   return decorator;
-};
+}
 
 /**
  * property decorator
  * parameter decorator
  */
-export const Header = ( key?: string ) =>
+export function Header( key?: string )
 {
   function decorator( target: AbstractApiClient, propertyKey: string | symbol ): void;
   function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex: number ): void;
@@ -43,13 +43,13 @@ export const Header = ( key?: string ) =>
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
-      existingHeaders: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
+      existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
     existingHeaders.push( parameterIndex !== undefined ? [ parameterIndex, key ] : { [ key || propertyKey ]: propertyKey } );
     Reflect.defineMetadata( metadataKey, existingHeaders, target, saveToKey );
   }
   return decorator;
-};
+}
 
 export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args: any[] ): Observable<any> =>
 {
@@ -66,7 +66,7 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
 
   [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function & Object & any[] ) =>
   {
-    switch( true )
+    switch ( true )
     {
       case typeof headerDef === 'function' :
         const headerForm$ = headerDef.call( undefined, thisArg );

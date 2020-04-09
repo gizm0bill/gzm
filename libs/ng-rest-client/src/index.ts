@@ -1,8 +1,7 @@
-/// <reference path="typings.d.ts" />
 
 import { HttpClient, HttpRequest, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError, from, zip } from 'rxjs';
-import { switchMap, catchError, takeLast, share, map, tap } from 'rxjs/operators';
+import { Observable, throwError, zip } from 'rxjs';
+import { switchMap, catchError, takeLast, share } from 'rxjs/operators';
 import { Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
@@ -62,11 +61,14 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
     descriptor
   );
 
-export const Error = ( handler: ( ...args: any[] ) => any ) =>
-  <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass => Reflect.defineMetadata( MetadataKeys.Error, handler, target );
+export function Error( handler: ( ...args: any[] ) => any )
+{
+  return <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass => Reflect.defineMetadata( MetadataKeys.Error, handler, target );
+}
+
 
 export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDecorator =>
-  ( target: Object, targetKey?: string | symbol ): void => Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
+  ( target: object, targetKey?: string | symbol ): void => Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
 
 // define method decorators
 export const POST = requestMethodDecoratorFactory( 'POST' );

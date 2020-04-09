@@ -55,7 +55,7 @@ describe( 'Common features', () =>
     (
       protected readonly http: HttpClient,
       public readonly mockService: MockService
-    ) { super( http ); }
+    ) { super(); }
 
     @POST( SOME_URL )
     testBody
@@ -126,9 +126,9 @@ describe( 'Common features', () =>
       [
         MockService,
         { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ), TestBed.get( MockService ) ) },
-        { provide: ApiClientA, useFactory: () => new ApiClientA( TestBed.get( HttpClient ) ) },
-        { provide: ApiClientB, useFactory: () => new ApiClientB( TestBed.get( HttpClient ) ) },
-        { provide: ApiClientC, useFactory: () => new ApiClientC( TestBed.get( HttpClient ) ) },
+        { provide: ApiClientA, useFactory: () => new ApiClientA( ) },
+        { provide: ApiClientB, useFactory: () => new ApiClientB( ) },
+        { provide: ApiClientC, useFactory: () => new ApiClientC( ) },
       ]
     } );
     httpTestingController = TestBed.get( HttpTestingController );

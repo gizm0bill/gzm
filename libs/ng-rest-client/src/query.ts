@@ -25,36 +25,7 @@ class PassThroughCodec implements HttpParameterCodec
 
 export const NO_ENCODE = Symbol( 'apiClient:Query.noEncode' );
 
-// export const buildQueryParameterz = ( thisArg, target, targetKey, args ) =>
-// {
-//   const
-//     classWideQueryParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Query, target.constructor ),
-//     queryParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey );
-//   let query = new HttpParams( { encoder: new PassThroughCodec } );
-
-
-//   if ( classWideQueryParams ) classWideQueryParams.forEach( classWideQueryParam =>
-//   {
-//     const _q = Object.assign( {}, classWideQueryParam );
-//     debugger;
-//     for ( const _qk in _q ) if ( _q.hasOwnProperty( _qk ) )
-//     {
-//       if ( typeof _q[_qk] === 'function' ) _q[_qk] = _q[_qk].call( thisArg );
-//       query = query.append( _qk, _q[_qk] );
-//     }
-//   } );
-//   if ( queryParams ) queryParams.filter( param => args[param[0]] !== undefined ).forEach( param =>
-//   {
-//     let queryKey: string, queryVal: string;
-//     // don't uri encode flagged params
-//     if ( Object.values( param ).indexOf( NO_ENCODE ) !== -1 ) [ queryKey, queryVal ] = [ param[1], args[param[0]] ];
-//     else [ queryKey, queryVal ] = [ standardEncoding( param[1] ), standardEncoding( args[param[0]] ) ];
-//     return query = query.append( queryKey, queryVal );
-//   } );
-//   return query;
-// };
-
-export const buildQueryParameters = ( thisArg: AbstractApiClient, target, targetKey, args: any[] ): Observable<any> =>
+export const buildQueryParameters = ( thisArg: AbstractApiClient, target: AbstractApiClient, targetKey: string | symbol, args: any[] ): Observable<any> =>
 {
   const
     query: Observable<any[]>[] = [],
@@ -67,7 +38,7 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target, target
         queryDef
       ) );
 
-  [ ...propertyQuery, ...classWideQuery, ...methodQuery ].forEach( ( [ paramIndex, queryDef, ...extraOptions ]: [ number, Function & Object & string, ...any[] ] ) =>
+  [ ...propertyQuery, ...classWideQuery, ...methodQuery ].forEach( ( [ paramIndex, queryDef, ...extraOptions ]: [ number, any, ...any[] ] ) =>
   {
     switch ( true )
     {
@@ -76,10 +47,11 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target, target
         query.push( ( !( queryForm$ instanceof Observable ) ? of( queryForm$ ) : queryForm$ ).pipe( map( data => [ data, ...extraOptions ] ) ) );
         break;
       case paramIndex !== undefined: // parameter query
-        query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
+        // tslint:disable-next-line:no-unused-expression
+        args[ paramIndex ] && query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
       default: // is of Object type, method query
-        Object.entries( queryDef ).forEach( ( [ queryKey, queryForm ]: [ string, Function|any ] ) =>
+        Object.entries( queryDef ).forEach( ( [ queryKey, queryForm ]: [ string, ( () => void ) | any ] ) =>
         {
           switch ( true )
           {
@@ -132,7 +104,7 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
     else // on class
     {
       const metadataKey = MetadataKeys.Query;
-      const existingQuery: Object[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+      const existingQuery: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
       existingQuery.push( [ undefined, keyOrParams, ...extraOptions ] );
       Reflect.defineMetadata( metadataKey, existingQuery, target, undefined );
     }

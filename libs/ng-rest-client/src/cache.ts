@@ -9,6 +9,7 @@ export interface ICacheOptions
 {
   until?: number;
   times?: number;
+  forever?: boolean;
   clearMethodPrefix: string;
 }
 // TODO: add until date
@@ -19,20 +20,20 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
   switch ( true )
   {
     case typeof options === 'number':
-        cacheOptions.until = options as number;
-        break;
+      cacheOptions.until = options as number;
+      break;
     case typeof options === 'string' && options.lastIndexOf( 'times' ) > 0:
-        cacheOptions.times = parseInt( options as string, 10 );
-        break;
+      cacheOptions.times = parseInt( options as string, 10 );
+      break;
     case typeof options === 'string': // just try to parse some timestamp
-        cacheOptions.until = parseInt( options as string, 10 );
-        break;
+      cacheOptions.until = parseInt( options as string, 10 );
+      break;
     case isObject( cacheOptions ) && !!options:
-        cacheOptions.until = ( options as ICacheOptions ).until || undefined;
-        cacheOptions.times = ( options as ICacheOptions ).times || undefined;
-        if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
-          cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
-        break;
+      cacheOptions.until = ( options as ICacheOptions ).until || undefined;
+      cacheOptions.times = ( options as ICacheOptions ).times || undefined;
+      if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
+        cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
+      break;
   }
   return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
   {
@@ -41,13 +42,12 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
       `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
       {
         writable: false,
-        value: function()
+        value()
         {
           Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
           return this;
         }
     } );
-    // Reflect.defineMetadata( MetadataKeys.ClearCache, false, target, targetKey );
     Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
   };
 };
