@@ -47,7 +47,7 @@ describe( 'Methods', () =>
       imports: [ HttpClientTestingModule ],
       providers:
       [
-        { provide: ApiClient, useFactory: () => new ApiClient() },
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ) ) },
       ]
     } );
     httpTestingController = TestBed.get( HttpTestingController );

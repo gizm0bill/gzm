@@ -39,7 +39,7 @@ describe( 'Cache', () =>
       imports: [ HttpClientTestingModule ],
       providers:
       [
-        { provide: ApiClient, useFactory: () => new ApiClient( ) },
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ) ) },
       ]
     } );
     httpTestingController = TestBed.get( HttpTestingController );
@@ -96,6 +96,7 @@ describe( 'Cache', () =>
     const requests3 = httpTestingController.match( CACHE_URL_UNTIL );
     expect( requests3.length ).toEqual( 0 );
   } ) ) );
+
 
   afterEach( () => httpTestingController.verify() );
 } );

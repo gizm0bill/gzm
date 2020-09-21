@@ -54,7 +54,7 @@ describe( 'Headers', () =>
     (
       protected readonly http: HttpClient,
       public readonly mockService: MockService
-    ) { super(); }
+    ) { super( http ); }
 
     @Header() // Header value from simple class property
     [ NAME_PROPERTY_1 ] = [ VALUE_PROPERTY_1 ];

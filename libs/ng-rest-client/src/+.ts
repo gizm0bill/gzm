@@ -4,6 +4,21 @@ import { HttpClient } from '@angular/common/http';
 
 export const isObject = ( item: any ) => ( item && typeof item === 'object' && !Array.isArray( item ) && item !== null );
 
+export const extend = <T, U>( target: T, source: U ): T & U =>
+{
+  if ( !isObject( target ) || !isObject( source ) ) return target as T & U;
+  Object.keys( source ).forEach( key =>
+  {
+    if ( isObject( source[key] ) )
+    {
+      if ( !target[key] ) Object.assign( target, { [key]: {} } );
+      extend( target[key], source[key] );
+    }
+    else Object.assign( target, { [key]: source[key] } );
+  } );
+  return target as T & U;
+};
+
 // abstract Api class
 @Injectable()
 export abstract class AbstractApiClient
