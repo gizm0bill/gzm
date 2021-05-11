@@ -39,10 +39,10 @@ describe( 'Cache', () =>
       imports: [ HttpClientTestingModule ],
       providers:
       [
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ) ) },
+        { provide: ApiClient, useFactory: () => new ApiClient() },
       ]
     } );
-    httpTestingController = TestBed.get( HttpTestingController );
+    httpTestingController = TestBed.inject( HttpTestingController );
   } );
 
   it( 'should cache for the specified amount of time', fakeAsync( inject( [ApiClient], ( apiClient: ApiClient ) =>

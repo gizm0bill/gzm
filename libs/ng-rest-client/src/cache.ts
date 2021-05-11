@@ -58,7 +58,7 @@ export const CacheClear = <TClass extends AbstractApiClient>( targetKey: MethodN
     const originalValue = descriptor.value;
     descriptor.value = function()
     {
-      Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
+      Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey as any );
       return originalValue.call( this );
     };
   };

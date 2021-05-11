@@ -63,7 +63,8 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
 
 export function Error( handler: ( ...args: any[] ) => any )
 {
-  return <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass => Reflect.defineMetadata( MetadataKeys.Error, handler, target );
+  return <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass =>
+    Reflect.defineMetadata( MetadataKeys.Error, handler, target ) as any;
 }
 
 

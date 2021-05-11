@@ -54,7 +54,7 @@ describe( 'Headers', () =>
     (
       protected readonly http: HttpClient,
       public readonly mockService: MockService
-    ) { super( http ); }
+    ) { super(); }
 
     @Header() // Header value from simple class property
     [ NAME_PROPERTY_1 ] = [ VALUE_PROPERTY_1 ];
@@ -82,10 +82,10 @@ describe( 'Headers', () =>
       providers:
       [
         MockService,
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.get( HttpClient ), TestBed.get( MockService ) ) },
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( HttpClient ), TestBed.inject( MockService ) ) },
       ]
     } );
-    httpTestingController = TestBed.get( HttpTestingController );
+    httpTestingController = TestBed.inject( HttpTestingController );
   } );
 
   it( 'should get headers from all forms of definition', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
