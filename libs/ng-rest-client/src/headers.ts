@@ -57,12 +57,16 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
     headers: Observable<any>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
-    propertyHeaders = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] )
+    x = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] );
+  const propertyHeaders = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] )
       .map( ( headerDef: Array<{ [name: string]: any }> ) =>
-      (
-        Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ]: [ string, any ] ) => headerDef[headerKey] = thisArg[headerProperty] ),
-        headerDef
-      ) );
+      {
+        const headerValues = Object.assign( {}, headerDef );
+        Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ]: [ string, any ] ) => {
+          headerValues[headerKey] = thisArg[headerProperty];
+        } );
+        return headerValues;
+      } );
 
   [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function & Object & any[] ) =>
   {
