@@ -1,6 +1,6 @@
 import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { AbstractApiClient, Cache, GET, CacheClear } from '.';
 import { Observable } from 'rxjs';
 
@@ -10,7 +10,7 @@ describe( 'Cache', () =>
     CACHE_URL_UNTIL = 'test-get-cache-url-until',
     CACHE_URL_TIMES = 'test-get-cache-url-times',
     CACHE_UNTIL = 100,
-    CACHE_TIMES = 3,
+    CACHE_TIMES = 2,
 
     someTestData  = [ 'some', 'response' ],
     expectSomeTestData = ( { body }: HttpResponse<any> ) => expect( body ).toBe( someTestData );
@@ -72,11 +72,19 @@ describe( 'Cache', () =>
     const requests1 = httpTestingController.match( CACHE_URL_TIMES );
     expect( requests1.length ).toEqual( 1 );
     requests1[0].flush( someTestData );
+
+    let subsequentRequest: TestRequest[];
+    for ( let i = 0; i < CACHE_TIMES - 1; i++ ) {
+      apiClient.testCacheTimes().subscribe( expectSomeTestData );
+      subsequentRequest = httpTestingController.match( CACHE_URL_TIMES );
+      expect( subsequentRequest.length ).toBe( 0 );
+    }
     // test that the next one to be a new request
+
     apiClient.testCacheTimes().subscribe( expectSomeTestData );
-    const requests2 = httpTestingController.match( CACHE_URL_TIMES );
-    expect( requests2.length ).toEqual( 1 );
-    requests2[0].flush( someTestData );
+    const requests3 = httpTestingController.match( CACHE_URL_TIMES );
+    expect( requests3.length ).toEqual( 1 );
+    requests3[0].flush( someTestData );
   } ) );
 
   it( 'should clear cache imperatively', fakeAsync( inject( [ ApiClient ], ( apiClient: ApiClient ) =>

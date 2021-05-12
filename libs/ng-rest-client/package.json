@@ -1,6 +1,6 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "dependencies": {
     "tslib": "^2.0.0"
   },

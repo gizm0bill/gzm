@@ -22,7 +22,7 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
     case typeof options === 'number':
       cacheOptions.until = options as number;
       break;
-    case typeof options === 'string' && options.lastIndexOf( 'times' ) > 0:
+    case typeof options === 'string' && ( options.lastIndexOf( 'times' ) > 0 || options.lastIndexOf( 'x' ) > 0 ):
       cacheOptions.times = parseInt( options as string, 10 );
       break;
     case typeof options === 'string': // just try to parse some timestamp
@@ -104,8 +104,8 @@ export const handleCache =
       break;
     case !!cacheOptions.times && cacheMapEntry[1].times > 0:
       cacheMapEntry[1].times--; // decrease called times
-      cacheMap.set( cacheMapKey, [ returnRequest, cacheMapEntry[1] ] );
       [ returnRequest ] = cacheMapEntry;
+      cacheMap.set( cacheMapKey, [ returnRequest, cacheMapEntry[1] ] );
       break;
   }
   if ( !returnRequest ) // first cache request
