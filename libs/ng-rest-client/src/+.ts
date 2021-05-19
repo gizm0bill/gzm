@@ -27,7 +27,7 @@ export abstract class AbstractApiClient
   constructor() { this.http = inject( HttpClient ); }
 }
 export type DerivedAbstractApiClient = new ( ...args: any[] ) => AbstractApiClient;
-export type MethodNames<T> = { [K in keyof T]: T[K] extends () => void ? K : never }[ keyof T ];
+export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[ keyof T ];
 
 // reflect metadata key symbols
 export const MetadataKeys =

@@ -9,8 +9,8 @@ export interface ICacheOptions
 {
   until?: number;
   times?: number;
-  forever?: boolean;
-  clearMethodPrefix: string;
+  forever?: boolean; // TODO: implement
+  clearMethodPrefix: string; // TODO: remove
 }
 // TODO: add until date
 // TODO: add each times
@@ -38,6 +38,7 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
   return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
   {
     const targetKeyString = targetKey.toString();
+    // TODO: remove
     Object.defineProperty( target,
       `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
       {
