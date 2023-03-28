@@ -29,7 +29,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
     autoWatch: true,
     singleRun: false,
-    browsers: ['Chrome', 'ChromeHeadlessCustom'],
+    browsers: ['ChromeHeadlessCustom', 'Chrome'],
     customLaunchers: {
       ChromeHeadlessCustom: {
         base: 'ChromeHeadless',
