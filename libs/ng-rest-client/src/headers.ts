@@ -40,6 +40,7 @@ export function Header( key?: string )
   function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex: number ): void;
   function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ): void
   {
+    // TODO: check constructor: typeof target === 'function'
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
@@ -68,6 +69,7 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
         return headerValues;
       } );
 
+  // TODO: defer
   [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function & Object & any[] ) =>
   {
     switch ( true )

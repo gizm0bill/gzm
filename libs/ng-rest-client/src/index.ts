@@ -9,6 +9,7 @@ import { buildQueryParameters } from './query';
 import { buildBody } from './body';
 import { buildPathParams, getBaseUrl } from './path';
 
+// TODO: https://github.com/Microsoft/TypeScript/issues/4881
 // builds request method decorators
 const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
   ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
