@@ -61,7 +61,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
     },
     descriptor
   );
-
+// TODO: type
 export function Error( handler: ( ...args: any[] ) => any )
 {
   return <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass =>
