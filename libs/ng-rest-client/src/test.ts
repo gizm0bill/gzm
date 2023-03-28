@@ -8,7 +8,7 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
-
+( window as any ).global = window;
 declare const require: any;
 // First, initialize the Angular testing environment.
 getTestBed().initTestEnvironment( BrowserDynamicTestingModule, platformBrowserDynamicTesting(), {

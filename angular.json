@@ -32,7 +32,6 @@
       }
     }
   },
-  "defaultProject": "ng-rest-client",
   "cli": {
     "analytics": false
   }
