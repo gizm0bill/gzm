@@ -1,13 +1,13 @@
 
-import { HttpClient, HttpRequest, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError, zip } from 'rxjs';
-import { switchMap, catchError, takeLast, share } from 'rxjs/operators';
-import { Reflect, AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { catchError, share, switchMap, takeLast } from 'rxjs/operators';
+import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys, Reflect } from './+';
+import { buildBody } from './body';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
-import { buildQueryParameters } from './query';
-import { buildBody } from './body';
 import { buildPathParams, getBaseUrl } from './path';
+import { buildQueryParameters } from './query';
 
 // TODO: https://github.com/Microsoft/TypeScript/issues/4881
 // builds request method decorators
@@ -40,7 +40,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
 
         baseUrl$ = getBaseUrl( this, target );
 
-      let requestObject: HttpRequest<any>;
+      let requestObject: HttpRequest<unknown>;
       return zip( baseUrl$, headers$, params$ ).pipe
       (
         switchMap( ( [ baseUrl, headers, params ] ) =>
@@ -50,7 +50,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
             || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
         } ),
         takeLast( 1 ), // TODO: take only request end result for now...
-        catchError( ( error: HttpErrorResponse, caught: Observable<any> ) => errorHandler
+        catchError( ( error: HttpErrorResponse, caught: Observable<unknown> ) => errorHandler
           ? errorHandler( this, error, requestObject, caught )
           : throwError( error ) ),
 
@@ -83,8 +83,9 @@ export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );
 export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
 
 export { AbstractApiClient } from './+';
-export { Cache, CacheClear } from './cache';
-export { Headers, Header } from './headers';
-export { Query, NO_ENCODE } from './query';
 export { Body } from './body';
-export { Path, BaseUrl } from './path';
+export { Cache, CacheClear } from './cache';
+export { Header, Headers } from './headers';
+export { BaseUrl, Path } from './path';
+export { NO_ENCODE, Query } from './query';
+

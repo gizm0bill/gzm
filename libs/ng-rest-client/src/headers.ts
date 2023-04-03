@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { Observable, of, zip } from 'rxjs';
-import { map, defaultIfEmpty } from 'rxjs/operators';
-import { DerivedAbstractApiClient, Reflect, MetadataKeys, AbstractApiClient } from './+';
+import { defaultIfEmpty, map } from 'rxjs/operators';
+import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys, Reflect } from './+';
 
 /**
  * class decorator
@@ -16,13 +16,13 @@ export function Headers( headers: {} )
     const metadataKey = MetadataKeys.Header;
     if ( targetKey !== undefined ) // method
     {
-      const existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
+      const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
       existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
     }
     else // class type
     {
-      const existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+      const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
       existingHeaders.push( headers );
       Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
     }
@@ -44,7 +44,7 @@ export function Header( key?: string )
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
-      existingHeaders: any[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
+      existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
     existingHeaders.push( parameterIndex !== undefined ? [ parameterIndex, key ] : { [ key || propertyKey ]: propertyKey } );
     Reflect.defineMetadata( metadataKey, existingHeaders, target, saveToKey );
@@ -52,15 +52,14 @@ export function Header( key?: string )
   return decorator;
 }
 
-export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args: any[] ): Observable<any> =>
+export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args: unknown[] ): Observable<HttpHeaders> =>
 {
   const
-    headers: Observable<any>[] = [],
+    headers: Observable<unknown>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
-    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [],
-    x = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] );
+    methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [];
   const propertyHeaders = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] )
-      .map( ( headerDef: Array<{ [name: string]: any }> ) =>
+      .map( ( headerDef: Array<{ [name: string]: unknown }> ) =>
       {
         const headerValues = Object.assign( {}, headerDef );
         Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ]: [ string, any ] ) => {
@@ -83,15 +82,15 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
         headers.push( of( { [ headerDef[1] ]: args[ headerDef[0] ] } ) );
         break;
       default: // is of Object type, method headers
-        Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|any ] ) =>
+        Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|Observable<unknown> ] ) =>
         {
           switch ( true )
           {
             case headerForm instanceof Observable: // is from property decorator
-              headers.push( headerForm.pipe( map( headerValue => ( { [ headerKey ]: headerValue } ) ) ) );
+              headers.push( ( headerForm as Observable<unknown> ).pipe( map( headerValue => ( { [ headerKey ]: headerValue } ) ) ) );
               break;
             case typeof headerForm === 'function':
-              const headerValue$ = headerForm.call( undefined, thisArg );
+              const headerValue$ = ( headerForm as Function ).call( undefined, thisArg );
               if ( !( headerValue$ instanceof Observable ) ) headers.push( of( { [ headerKey ]: headerValue$ } ) );
               else headers.push( headerValue$.pipe( map( headerValue => ( { [ headerKey ]: headerValue } ) ) ) );
               break;
@@ -106,10 +105,10 @@ export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, arg
   (
     defaultIfEmpty( [] ),
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
-    (
+    {
       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
-        headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), ...( Array.isArray( headerValue ) ? headerValue : [ headerValue ] ) ] ),
-      headersObject
-    ), {} ) ) ),
+        headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), ...( Array.isArray( headerValue ) ? headerValue : [ headerValue ] ) ] );
+      return headersObject;
+    }, {} ) ) ),
   );
 };

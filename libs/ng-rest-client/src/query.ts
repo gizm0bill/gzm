@@ -1,7 +1,7 @@
 import { HttpParameterCodec, HttpParams } from '@angular/common/http';
-import { DerivedAbstractApiClient, MetadataKeys, Reflect, AbstractApiClient } from './+';
 import { Observable, of, zip } from 'rxjs';
 import { defaultIfEmpty, map } from 'rxjs/operators';
+import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys, Reflect } from './+';
 
 export const standardEncoding = ( value: string ): string =>
   encodeURIComponent( value )
@@ -47,7 +47,7 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target: Abstra
         query.push( ( !( queryForm$ instanceof Observable ) ? of( queryForm$ ) : queryForm$ ).pipe( map( data => [ data, ...extraOptions ] ) ) );
         break;
       case paramIndex !== undefined: // parameter query
-        // tslint:disable-next-line:no-unused-expression
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         args[ paramIndex ] && query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
       default: // is of Object type, method query

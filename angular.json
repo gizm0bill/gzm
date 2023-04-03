@@ -28,11 +28,24 @@
             "tsConfig": "libs/ng-rest-client/tsconfig.spec.json",
             "karmaConfig": "libs/ng-rest-client/karma.conf.js"
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "libs/ng-rest-client/**/*.ts",
+              "libs/ng-rest-client/**/*.html"
+            ]
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "schematicCollections": [
+      "@angular-eslint/schematics",
+      "@angular-eslint/schematics"
+    ]
   }
 }
