@@ -41,7 +41,8 @@
         "space-in-parens": [
           "error",
           "always"
-        ]
+        ],
+        "no-unused-expressions": "error"
       }
     },
     {

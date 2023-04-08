@@ -47,7 +47,7 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target: Abstra
         query.push( ( !( queryForm$ instanceof Observable ) ? of( queryForm$ ) : queryForm$ ).pipe( map( data => [ data, ...extraOptions ] ) ) );
         break;
       case paramIndex !== undefined: // parameter query
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        // eslint-disable-next-line no-unused-expressions
         args[ paramIndex ] && query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
       default: // is of Object type, method query

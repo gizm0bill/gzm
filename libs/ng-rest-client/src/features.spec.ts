@@ -36,7 +36,7 @@ describe( 'Common features', () =>
 
   class MockService
   {
-    public readonly someSubject = new BehaviorSubject( {} );
+    readonly someSubject = new BehaviorSubject( {} );
   }
 
   @Query
@@ -54,7 +54,7 @@ describe( 'Common features', () =>
     constructor
     (
       protected readonly http: HttpClient,
-      public readonly mockService: MockService
+      readonly mockService: MockService
     ) { super(); }
 
     @POST( SOME_URL )
@@ -100,21 +100,21 @@ describe( 'Common features', () =>
   @BaseUrl( CONFIG_JSON_VALUE )
   class ApiClientA extends AbstractApiClient
   {
-    @HEAD( SOME_URL ) public testBaseUrlA(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlA(): Observable<Response> { return; }
   }
 
   // get base url from some json path and extract value by provided key
   @BaseUrl( CONFIG_JSON, CONFIG_JSON_KEY )
   class ApiClientB extends AbstractApiClient
   {
-    @HEAD( SOME_URL ) public testBaseUrlB(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlB(): Observable<Response> { return; }
   }
 
   // get base url from Observable
   @BaseUrl( ( thisArg: ApiClientC ) => thisArg.http.get( CONFIG_JSON ).pipe( map( response => response[ CONFIG_JSON_KEY ] ) ) )
   class ApiClientC extends AbstractApiClient
   {
-    @HEAD( SOME_URL ) public testBaseUrlC(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlC(): Observable<Response> { return; }
   }
 
   beforeEach( () =>

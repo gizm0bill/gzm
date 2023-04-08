@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "ng-add": {
+      "description": "Add @gzm/ng-rest-client to the project",
+      "factory": "./ng-add/index#ngAdd"
+    },
+    "ng-update": {
+      "description": "Add @gzm/ng-rest-client to the project",
+      "factory": "./ng-update#updateToV2"
+    }
+  }
+}

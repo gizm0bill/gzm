@@ -35,9 +35,9 @@ describe( 'Headers', () =>
 
   class MockService
   {
-    public readonly someSubject = new BehaviorSubject( {} );
-    public readonly someOtherSubject = new BehaviorSubject( {} );
-    public readonly singleValueSubject = new BehaviorSubject( {} );
+    readonly someSubject = new BehaviorSubject( {} );
+    readonly someOtherSubject = new BehaviorSubject( {} );
+    readonly singleValueSubject = new BehaviorSubject( {} );
   }
 
   // class-wide Header value from function at runtime for current method
@@ -53,7 +53,7 @@ describe( 'Headers', () =>
     constructor
     (
       protected readonly http: HttpClient,
-      public readonly mockService: MockService
+      readonly mockService: MockService
     ) { super(); }
 
     @Header() // Header value from simple class property

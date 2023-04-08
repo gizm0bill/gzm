@@ -26,7 +26,10 @@
           "options": {
             "main": "libs/ng-rest-client/src/test.ts",
             "tsConfig": "libs/ng-rest-client/tsconfig.spec.json",
-            "karmaConfig": "libs/ng-rest-client/karma.conf.js"
+            "karmaConfig": "libs/ng-rest-client/karma.conf.js",
+            "include": [
+              "libs/ng-rest-client/src/**/*.spec.ts"
+            ]
           }
         },
         "lint": {
@@ -39,12 +42,117 @@
           }
         }
       }
+    },
+    "ng-rest-client-demo": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "demos/ng-rest-client",
+      "sourceRoot": "demos/ng-rest-client/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/ng-rest-client-demo",
+            "index": "demos/ng-rest-client/src/index.html",
+            "main": "demos/ng-rest-client/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "demos/ng-rest-client/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "demos/ng-rest-client/src/favicon.ico",
+              "demos/ng-rest-client/src/assets"
+            ],
+            "styles": [
+              "demos/ng-rest-client/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "ng-rest-client-demo:build:production"
+            },
+            "development": {
+              "browserTarget": "ng-rest-client-demo:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "ng-rest-client-demo:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "demos/ng-rest-client/tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "demos/ng-rest-client/src/favicon.ico",
+              "demos/ng-rest-client/src/assets"
+            ],
+            "styles": [
+              "demos/ng-rest-client/src/styles.scss"
+            ],
+            "scripts": []
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "demos/ng-rest-client/**/*.ts",
+              "demos/ng-rest-client/**/*.html"
+            ]
+          }
+        }
+      }
     }
   },
   "cli": {
     "analytics": false,
     "schematicCollections": [
-      "@angular-eslint/schematics",
       "@angular-eslint/schematics"
     ]
   }

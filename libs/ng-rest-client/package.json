@@ -5,14 +5,22 @@
     "tslib": "^2.0.0"
   },
   "peerDependencies": {
-    "@angular/common": "~14.3.0",
-    "@angular/core": "~14.3.0",
+    "@angular/common": "^15.2.5",
+    "@angular/core": "^15.2.5",
+    "@angular-devkit/schematics": "^15.2.4",
     "reflect-metadata": "^0.1.13"
   },
   "description": "Angular REST Client utility library",
   "main": "index.js",
   "scripts": {
-    "test": "ng test"
+    "test": "ng test",
+    "build": "tsc -p tsconfig.schematics.json"
+  },
+  "ng-update": {
+    "migrations": "./schematics/migration.json"
+  },
+  "ng-add": {
+    "save": "dependencies"
   },
   "repository": {
     "type": "git",
@@ -23,5 +31,6 @@
     "REST"
   ],
   "author": "gizm0bill@gmail.com",
-  "license": "MIT"
+  "license": "MIT",
+  "schematics": "./schematics/collection.json"
 }
