@@ -1,52 +1,114 @@
 import { readJsonWorkspace } from '@angular-devkit/core/src/workspace/json/reader';
-import { SchematicContext, Tree } from '@angular-devkit/schematics';
+import { SchematicContext, Tree, UpdateRecorder } from '@angular-devkit/schematics';
 
 import { dirname, normalize } from '@angular-devkit/core';
+import { LoggerApi } from '@angular-devkit/core/src/logger';
 import { WorkspaceHost } from '@angular-devkit/core/src/workspace';
-import * as ts from 'typescript';
-import * as path from 'path';
+import { sep } from 'path';
+import {
+  CallExpression,
+  canHaveDecorators,
+  ClassDeclaration,
+  ClassExpression,
+  createCompilerHost,
+  createProgram,
+  forEachChild,
+  getDecorators,
+  isClassDeclaration,
+  isClassExpression,
+  isImportDeclaration,
+  isImportSpecifier,
+  LeftHandSideExpression,
+  Node,
+  parseJsonConfigFileContent,
+  readConfigFile,
+  SourceFile,
+  SyntaxKind,
+  sys
+} from 'typescript';
+const { keys } = Object;
 
-export function updateToV2() {
-  return async ( tree: Tree, { logger }: SchematicContext ) => {
-    const projects = await getProjects( tree );
-    projects.forEach( project => {
-      [ 'build', 'test' ].forEach( target => {
-        const tsconfigPath = normalize( project.targets.get( target )?.options?.tsConfig as string );
-        if ( !tsconfigPath ) {
-          logger.warn( `Skipping migration for project ${project.root}:${target}` )
-        }
-        const { config } = ts.readConfigFile( tsconfigPath!, p => tree.read( normalize( p ) )!.toString() );
-        const parsed = ts.parseJsonConfigFileContent( config, ts.sys, dirname( tsconfigPath! ) );
-        const program = ts.createProgram( parsed.fileNames, parsed.options, ts.createCompilerHost( parsed.options, true ) );
-        const sourceFiles = program.getSourceFiles().filter( f => !f.isDeclarationFile && !program.isSourceFileFromExternalLibrary( f ) );
-        sourceFiles.forEach( sourceFile => {
-          // some bug in ts, getting files with full path
-          const recorder = tree.beginUpdate( sourceFile.fileName.replace( new RegExp( `^${program.getCurrentDirectory()}` ), '' ).replace( `^${path.sep}`, '' ) );
-          ts.forEachChild( sourceFile, ( node ) => {
-            if ( ts.isImportDeclaration( node ) && node.moduleSpecifier?.getFullText()?.match( /@gzm\/ng-rest-client/ ) ) {
-              node.importClause?.namedBindings?.forEachChild( ( specifier ) => {
-                if ( ts.isImportSpecifier( specifier ) ) {
-                  if ( specifier.propertyName ) {
-                    recorder.remove( specifier.propertyName.getStart(), specifier.propertyName.getEnd() - specifier.propertyName.getStart() );
-                    recorder.insertLeft( specifier.propertyName.getStart(), 'Wtf' );
-                  }
-                }
-              } );
-            }
-          } );
-          tree.commitUpdate( recorder );
-        } );
+
+export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext ) =>
+{
+  const
+    replacements = {
+      AbstractApiClient: 'AbstractRESTClient',
+      Error: 'RESTClientError',
+    },
+    replacementKeys = keys( replacements ),
+    replace = ( node: Node, recorder: UpdateRecorder ) => {
+      const nodeValue = node.getText().trim();
+      if ( !replacementKeys.includes( nodeValue ) ) return;
+      const start = node.getStart();
+      recorder.remove( start, node.getEnd() - start );
+      recorder.insertLeft( start, replacements[nodeValue as keyof typeof replacements] );
+    };
+  return await forEachProjectFile( tree, logger, ( sourceFile, recorder ) => {
+    let
+      decoratorCalls: LeftHandSideExpression[] = [],
+      derivedClasses: ( ClassDeclaration | ClassExpression )[] = [],
+      hasPackageImports = false;
+
+    forEachChild( sourceFile, node =>
+    {
+      // TODO: decorator calls
+      // gather decorator calls, check later if has imports
+      decoratorCalls = [
+        ...decoratorCalls,
+        ...( canHaveDecorators( node ) && ( getDecorators( node ) || [] )?.reduce( ( decorators, decorator ) =>
+          [ ...decorators, ( decorator.expression as CallExpression )?.expression ],
+          []
+        ).filter( Boolean ) || [] )
+      ];
+      // gather derived classes, check later if has imports
+      derivedClasses = [
+        ...derivedClasses,
+        ...( ( isClassDeclaration( node ) || isClassExpression( node ) ) && node.heritageClauses ? [node] : [] )
+      ];
+      // replace imports
+      if ( !isImportDeclaration( node ) || !node.moduleSpecifier?.getFullText()?.match( /@gzm\/ng-rest-client/ ) ) return;
+      node.importClause?.namedBindings?.forEachChild( ( specifier ) => {
+        if ( !isImportSpecifier( specifier ) ) return;
+        if ( specifier.name && !specifier.propertyName ) hasPackageImports = true;
+        replace( specifier.propertyName || specifier.name, recorder );
       } );
     } );
-    return tree;
-  };
-}
+    if ( !hasPackageImports ) return;
+    // replace decorators
+    decoratorCalls?.forEach( node => replace( node, recorder ) );
+    // replace inheritance
+    derivedClasses?.forEach( node =>
+      node.heritageClauses?.find( ( { token } ) => token === SyntaxKind.ExtendsKeyword )?.types?.forEach( baseType => replace( baseType, recorder ) )
+    );
 
-const getProjects = async ( tree: Tree ) => {
-  const path = ['/angular.json', '/.angular.json'].find( filePath => tree.exists( filePath ) );
-  const workspaceConfigBuffer = tree.read( path! );
-  if ( !workspaceConfigBuffer || !path ) {
-    throw new Error( 'Could not find angular.json' );
-  }
-  return ( await readJsonWorkspace( path, { readFile: async filePath => tree.read( filePath )!.toString(), } as WorkspaceHost ) ).projects;
+  } );
+  return tree;
+};
+
+const forEachProjectFile = async ( tree: Tree, logger: LoggerApi, updateFunction: ( sourceFile: SourceFile, recorder: UpdateRecorder ) => unknown ) => {
+  const
+    angularJson = [ '/angular.json', '/.angular.json' ].find( filePath => tree.exists( filePath ) ),
+    workspaceConfigBuffer = tree.read( angularJson! );
+  if ( !workspaceConfigBuffer || !angularJson ) throw new Error( 'Could not find angular.json' );
+  const projects = ( await readJsonWorkspace( angularJson, { readFile: async filePath => tree.read( filePath )!.toString(), } as WorkspaceHost ) ).projects
+  projects.forEach( ( project, projectName ) => [ 'build', 'test' ].forEach( target =>
+  {
+    const tsconfigPath = normalize( project.targets.get( target )?.options?.tsConfig as string );
+    if ( !tsconfigPath ) {
+      logger.warn( `Skipping migration for project ${projectName}:${target}` );
+      return;
+    }
+    const
+      { config } = readConfigFile( tsconfigPath!, path => tree.read( normalize( path ) )!.toString() ),
+      parsed = parseJsonConfigFileContent( config, sys, dirname( tsconfigPath! ) ),
+      program = createProgram( parsed.fileNames, parsed.options, createCompilerHost( parsed.options, true ) ),
+      sourceFiles = program.getSourceFiles().filter( file => !file.isDeclarationFile && !program.isSourceFileFromExternalLibrary( file ) );
+    sourceFiles.forEach( sourceFile => {
+      // some bug in ts, getting files with full path
+      const recorder = tree.beginUpdate( sourceFile.fileName.replace( new RegExp( `^${program.getCurrentDirectory()}` ), '' ).replace( `^${sep}`, '' ) );
+      updateFunction( sourceFile, recorder )
+      tree.commitUpdate( recorder );
+    } );
+  } ) );
 }
