@@ -4,12 +4,14 @@ import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@an
 import { AbstractApiClient, Cache, GET, CacheClear } from '.';
 import { Observable } from 'rxjs';
 import { Query } from './query';
+import { tap } from 'rxjs/operators';
 
 describe( 'Cache', () =>
 {
   const
     CACHE_URL_UNTIL = 'test-get-cache-url-until',
     CACHE_URL_TIMES = 'test-get-cache-url-times',
+    CACHE_URL_FUNCTION = 'test-get-cache-url-function',
     CACHE_UNTIL = 100,
     CACHE_TIMES = 2,
 
@@ -31,6 +33,14 @@ describe( 'Cache', () =>
 
     @CacheClear<ApiClient>( 'testCacheTimes' )
     clearCacheTestCacheTimes() { return this; }
+
+    testCacheFunctionCounter = 0;
+
+    @GET( CACHE_URL_TIMES ) @Cache( ( thisArg: ApiClient ) => thisArg.testCacheFunctionCounter % 3 === 0 )
+    _testCacheFunction(): Observable<any> { return; }
+    testCacheFunction(): Observable<any> {
+      return this._testCacheFunction().pipe( tap( () => this.testCacheFunctionCounter++ ) );
+    }
   }
 
   beforeEach( () =>

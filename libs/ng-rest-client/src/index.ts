@@ -2,7 +2,7 @@
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError, zip } from 'rxjs';
 import { catchError, share, switchMap, takeLast } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys, Reflect } from './+';
+import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 import { buildBody } from './body';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';

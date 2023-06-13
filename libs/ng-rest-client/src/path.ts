@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys, Reflect } from './+';
+import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
 
 export const buildPathParams = ( target: AbstractApiClient, targetKey: string | symbol, args: any, requestUrl: string ) =>
 {

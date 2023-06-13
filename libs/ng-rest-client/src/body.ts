@@ -1,4 +1,4 @@
-import { Reflect, MetadataKeys, DerivedAbstractApiClient, AbstractApiClient } from './+';
+import { MetadataKeys, DerivedAbstractApiClient, AbstractApiClient } from './+';
 
 export const buildBody = ( target: AbstractApiClient, targetKey: string | symbol, args: any[] ) =>
 {
@@ -27,7 +27,7 @@ export const buildBody = ( target: AbstractApiClient, targetKey: string | symbol
     // plain object
     else bodyParams.map( param => ( { [param[1]]: args[param[0]] } ) ).forEach( param => Object.assign( body, param ) );
   }
-  return body;
+  return !Object.keys( body ).length ? undefined : body;
 };
 
 export const Body = ( key?: string, ...extraOptions: any[] ) =>

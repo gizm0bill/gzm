@@ -42,5 +42,3 @@ export const MetadataKeys =
   Cache: Symbol( 'apiClient:Cache' ),
   ClearCache: Symbol( 'apiClient:ClearCache' ),
 };
-
-export const Reflect = global['Reflect'];

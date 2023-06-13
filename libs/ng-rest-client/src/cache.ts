@@ -1,7 +1,7 @@
-import { HttpEvent, HttpHeaders, HttpRequest, HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpHeaders, HttpParams, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { isObject, Reflect, MetadataKeys, MethodNames, AbstractApiClient, extend, DerivedAbstractApiClient } from './+';
 import { shareReplay } from 'rxjs/operators';
+import { AbstractApiClient, DerivedAbstractApiClient, extend, isObject, MetadataKeys, MethodNames } from './+';
 
 export const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
 
@@ -9,12 +9,11 @@ export interface ICacheOptions
 {
   until?: number;
   times?: number;
+  function?: () => boolean;
   forever?: boolean; // TODO: implement
   clearMethodPrefix: string; // TODO: remove
 }
-// TODO: add until date
-// TODO: add each times
-export const Cache = ( options?: number | string | ICacheOptions ): MethodDecorator =>
+export const Cache = ( options?: number | string | ( () => boolean ) | ICacheOptions ): MethodDecorator =>
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
   switch ( true )
@@ -34,6 +33,8 @@ export const Cache = ( options?: number | string | ICacheOptions ): MethodDecora
       if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
         cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
       break;
+    case typeof options === 'function':
+      cacheOptions.function = options as () => boolean;
   }
   return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
   {

@@ -7,7 +7,7 @@
 @Error( ( apiService: ApiService, error: HttpErrorResponse, _, caught: Observable<any> ) => 
 {
   if ( error.status === 401 ) // clear login, re-login and replay
-    return apiSrv.clearToken().token().pipe( switchMap( () => caught ) );
+    return apiService.clearToken().token( … ).pipe( switchMap( () => caught ) );
   return throwError( () => error );
 } )
 export class ApiService extends AbstractApiClient

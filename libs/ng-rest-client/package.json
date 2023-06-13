@@ -14,7 +14,7 @@
   "main": "index.js",
   "scripts": {
     "test": "ng test",
-    "build": "tsc -p tsconfig.schematics.json"
+    "build": "tsc -p tsconfig.schematics.json && cp schematics/*.json ../../dist/ng-rest-client/schematics/"
   },
   "ng-update": {
     "migrations": "./schematics/migration.json"

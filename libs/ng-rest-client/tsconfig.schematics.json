@@ -31,6 +31,7 @@
     "schematics/**/*"
   ],
   "exclude": [
-    "schematics/*/files/**/*"
+    "schematics/*/files/**/*",
+    "schematics/*/test/**/*"
   ]
 }
