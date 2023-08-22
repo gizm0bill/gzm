@@ -22,4 +22,4 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci --force
-      - run: ./node_modules/.bin/ng test --watch=false --code-coverage
+      - run: ./node_modules/.bin/ng test --watch=false --browsers=ChromeHeadless --code-coverage
