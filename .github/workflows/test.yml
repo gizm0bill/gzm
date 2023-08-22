@@ -13,13 +13,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [16.x, 18.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci --force
-    - run: ./node_modules/.bin/ng test --watch=false --browsers=ChromeHeadlessCustom --code-coverage
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci --force
+      - run: ./node_modules/.bin/ng test --watch=false --browsers=ChromeHeadlessCustom --code-coverage

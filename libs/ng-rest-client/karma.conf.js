@@ -9,6 +9,7 @@ module.exports = function (config) {
       require('karma-coverage'),
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
+      require('karma-firefox-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage-istanbul-reporter'),
       require('@angular-devkit/build-angular/plugins/karma')
@@ -30,7 +31,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
     autoWatch: false,
     singleRun: true,
-    browsers: ['ChromeHeadlessCustom', 'Chrome'],
+    browsers: ['Chrome', 'ChromeHeadless', 'ChromeHeadlessCustom', 'Firefox'],
     customLaunchers: {
       ChromeHeadlessCustom: {
         base: 'ChromeHeadless',
