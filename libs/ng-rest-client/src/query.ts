@@ -1,7 +1,7 @@
 import { HttpParameterCodec, HttpParams } from '@angular/common/http';
 import { Observable, of, zip } from 'rxjs';
 import { defaultIfEmpty, map } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
 
 export const standardEncoding = ( value: string ): string =>
   encodeURIComponent( value )
@@ -25,7 +25,7 @@ class PassThroughCodec implements HttpParameterCodec
 
 export const NO_ENCODE = Symbol( 'apiClient:Query.noEncode' );
 
-export const buildQueryParameters = ( thisArg: AbstractApiClient, target: AbstractApiClient, targetKey: string | symbol, args: any[] ): Observable<any> =>
+export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: AbstractRESTClient, targetKey: string | symbol, args: any[] ): Observable<any> =>
 {
   const
     query: Observable<any[]>[] = [],
@@ -90,9 +90,9 @@ export const buildQueryParameters = ( thisArg: AbstractApiClient, target: Abstra
 
 export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
 {
-  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-  function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex: number ): void;
-  function decorator( target: AbstractApiClient, propertyKey?: string | symbol, parameterIndex?: number ): void
+  function decorator <TClass extends DerivedAbstractRESTClient>( target: TClass ): void;
+  function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;
+  function decorator( target: AbstractRESTClient, propertyKey?: string | symbol, parameterIndex?: number ): void
   {
     if ( parameterIndex !== undefined ) // on param
     {

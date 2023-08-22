@@ -14,6 +14,7 @@ describe( 'Cache', () =>
     CACHE_URL_FUNCTION = 'test-get-cache-url-function',
     CACHE_UNTIL = 100,
     CACHE_TIMES = 2,
+    CACHE_FUNCTION_TIMES = 3,
 
     someTestData  = [ 'some', 'response' ],
     expectSomeTestData = ( { body }: HttpResponse<any> ) => expect( body ).toBe( someTestData );
@@ -34,12 +35,13 @@ describe( 'Cache', () =>
     @CacheClear<ApiClient>( 'testCacheTimes' )
     clearCacheTestCacheTimes() { return this; }
 
-    testCacheFunctionCounter = 0;
+    #testCacheFunctionCounter = 0;
+    shouldClearCacheTestCacheFunction() { return !( this.#testCacheFunctionCounter % CACHE_FUNCTION_TIMES ); }
 
-    @GET( CACHE_URL_TIMES ) @Cache( ( thisArg: ApiClient ) => thisArg.testCacheFunctionCounter % 3 === 0 )
+    @GET( CACHE_URL_FUNCTION ) @Cache( ( thisArg: ApiClient ) => thisArg.shouldClearCacheTestCacheFunction() )
     _testCacheFunction(): Observable<any> { return; }
     testCacheFunction(): Observable<any> {
-      return this._testCacheFunction().pipe( tap( () => this.testCacheFunctionCounter++ ) );
+      return this._testCacheFunction().pipe( tap( () => this.#testCacheFunctionCounter++ ) );
     }
   }
 
@@ -96,6 +98,32 @@ describe( 'Cache', () =>
     const requests3 = httpTestingController.match( CACHE_URL_TIMES );
     expect( requests3.length ).toEqual( 1 );
     requests3[0].flush( someTestData );
+  } ) );
+
+  it( 'should cache by function', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    // test more requests to be cached because tap function is called after the request is completed
+    for ( let i = 0; i < CACHE_FUNCTION_TIMES + 1; i++ ) apiClient.testCacheFunction().subscribe( expectSomeTestData );
+    const requests1 = httpTestingController.match( CACHE_URL_FUNCTION );
+    expect( requests1.length ).toEqual( 1 );
+    requests1[0].flush( someTestData );
+
+    // now test next requests not to be cached because cache test should be false
+    apiClient.testCacheFunction().subscribe( expectSomeTestData );
+    const request2 = httpTestingController.match( CACHE_URL_FUNCTION );
+    expect( request2.length ).toBe( 1 );
+    request2[0].flush( someTestData );
+
+    apiClient.testCacheFunction().subscribe( expectSomeTestData );
+    const request3 = httpTestingController.match( CACHE_URL_FUNCTION );
+    expect( request3.length ).toBe( 1 );
+    request3[0].flush( someTestData );
+
+    // finally cached
+    apiClient.testCacheFunction().subscribe( expectSomeTestData );
+    const request4 = httpTestingController.match( CACHE_URL_FUNCTION );
+    expect( request4.length ).toBe( 0 );
+
   } ) );
 
   it( 'should clear cache imperatively', fakeAsync( inject( [ ApiClient ], ( apiClient: ApiClient ) =>

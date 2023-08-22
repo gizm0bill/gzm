@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { Observable, of, zip } from 'rxjs';
 import { defaultIfEmpty, map } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
 
 /**
  * class decorator
@@ -9,9 +9,9 @@ import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
  */
 export function Headers( headers: {} )
 {
-  function decorator <TClass extends DerivedAbstractApiClient>( target: TClass ): void;
-  function decorator( target: AbstractApiClient, targetKey: string | symbol ): void;
-  function decorator( target: AbstractApiClient, targetKey?: string | symbol ): void
+  function decorator <TClass extends DerivedAbstractRESTClient>( target: TClass ): void;
+  function decorator( target: AbstractRESTClient, targetKey: string | symbol ): void;
+  function decorator( target: AbstractRESTClient, targetKey?: string | symbol ): void
   {
     const metadataKey = MetadataKeys.Header;
     if ( targetKey !== undefined ) // method
@@ -36,9 +36,9 @@ export function Headers( headers: {} )
  */
 export function Header( key?: string )
 {
-  function decorator( target: AbstractApiClient, propertyKey: string | symbol ): void;
-  function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex: number ): void;
-  function decorator( target: AbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ): void
+  function decorator( target: AbstractRESTClient, propertyKey: string | symbol ): void;
+  function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;
+  function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ): void
   {
     // TODO: check constructor: typeof target === 'function'
     const
@@ -52,7 +52,7 @@ export function Header( key?: string )
   return decorator;
 }
 
-export const buildHeaders = ( thisArg: AbstractApiClient, target, targetKey, args: unknown[] ): Observable<HttpHeaders> =>
+export const buildHeaders = ( thisArg: AbstractRESTClient, target, targetKey, args: unknown[] ): Observable<HttpHeaders> =>
 {
   const
     headers: Observable<unknown>[] = [],

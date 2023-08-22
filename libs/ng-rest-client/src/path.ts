@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
 
-export const buildPathParams = ( target: AbstractApiClient, targetKey: string | symbol, args: any, requestUrl: string ) =>
+export const buildPathParams = ( target: AbstractRESTClient, targetKey: string | symbol, args: any, requestUrl: string ) =>
 {
   const pathParams: any[] = ( Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey ) || [] ).filter( ( param: string ) => args[param[0]] !== undefined );
   if ( pathParams.length ) pathParams.forEach( param => requestUrl = requestUrl.replace( `{${param[1]}}`, args[param[0]] ) );
@@ -11,7 +11,7 @@ export const buildPathParams = ( target: AbstractApiClient, targetKey: string | 
 };
 
 export const Path = ( key?: string, ...extraOptions: any[] ) =>
-  ( target: DerivedAbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ) =>
+  ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined,
@@ -22,7 +22,7 @@ export const Path = ( key?: string, ...extraOptions: any[] ) =>
     Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
   };
 
-export function getBaseUrl( thisArg: AbstractApiClient, _target: AbstractApiClient )
+export function getBaseUrl( thisArg: AbstractRESTClient, _target: AbstractRESTClient )
 {
   /// Object.getPrototypeOf( thisArg ).constructor !== target.constructor - it's inherited
   return  ( Reflect.getOwnMetadata( MetadataKeys.BaseUrl, Object.getPrototypeOf( thisArg ).constructor ) || ( () => of( '' ) ) )( thisArg );
@@ -36,7 +36,7 @@ export function getBaseUrl( thisArg: AbstractApiClient, _target: AbstractApiClie
  */
 export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | string, configKey?: string )
 {
-  return  <TClass extends DerivedAbstractApiClient>( target: TClass ): void =>
+  return  <TClass extends DerivedAbstractRESTClient>( target: TClass ): void =>
   {
     const metadataKey = MetadataKeys.BaseUrl;
     let cached: Observable<any>;

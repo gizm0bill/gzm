@@ -1,6 +1,6 @@
-import { MetadataKeys, DerivedAbstractApiClient, AbstractApiClient } from './+';
+import { AbstractRESTClient, MetadataKeys } from './+';
 
-export const buildBody = ( target: AbstractApiClient, targetKey: string | symbol, args: any[] ) =>
+export const buildBody = ( target: AbstractRESTClient, targetKey: string | symbol, args: any[] ) =>
 {
   let bodyParams: any[] = Reflect.getOwnMetadata( MetadataKeys.Body, target, targetKey ),
       body: any = {};
@@ -27,11 +27,11 @@ export const buildBody = ( target: AbstractApiClient, targetKey: string | symbol
     // plain object
     else bodyParams.map( param => ( { [param[1]]: args[param[0]] } ) ).forEach( param => Object.assign( body, param ) );
   }
-  return !Object.keys( body ).length ? undefined : body;
+  return Object.keys( body ).length || Array.from( body ).length ? body : undefined;
 };
 
 export const Body = ( key?: string, ...extraOptions: any[] ) =>
-  ( target: DerivedAbstractApiClient, propertyKey: string | symbol, parameterIndex?: number ) =>
+  ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
       saveToKey = parameterIndex !== undefined ? propertyKey : undefined,

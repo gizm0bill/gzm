@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Observable, zip, BehaviorSubject, throwError } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, Error as ApiError } from '.';
+import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, RESTClientError as ApiError } from '.';
 import { standardEncoding } from './query';
 
 describe( 'Common features', () =>

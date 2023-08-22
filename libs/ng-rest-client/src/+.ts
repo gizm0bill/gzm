@@ -21,12 +21,12 @@ export const extend = <T, U>( target: T, source: U ): T & U =>
 
 // abstract Api class
 @Injectable()
-export abstract class AbstractApiClient
+export abstract class AbstractRESTClient
 {
   protected http: HttpClient;
   constructor() { this.http = inject( HttpClient ); }
 }
-export type DerivedAbstractApiClient = new ( ...args: unknown[] ) => AbstractApiClient;
+export type DerivedAbstractRESTClient = new ( ...args: unknown[] ) => AbstractRESTClient;
 export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[ keyof T ];
 
 // reflect metadata key symbols

@@ -1,7 +1,7 @@
 import { HttpClient, HttpEvent, HttpHeaders, HttpParams, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, extend, isObject, MetadataKeys, MethodNames } from './+';
+import { AbstractRESTClient, DerivedAbstractRESTClient, extend, isObject, MetadataKeys, MethodNames } from './+';
 
 export const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
 
@@ -9,11 +9,11 @@ export interface ICacheOptions
 {
   until?: number;
   times?: number;
-  function?: () => boolean;
+  function?: ( thisArg: AbstractRESTClient ) => boolean;
   forever?: boolean; // TODO: implement
   clearMethodPrefix: string; // TODO: remove
 }
-export const Cache = ( options?: number | string | ( () => boolean ) | ICacheOptions ): MethodDecorator =>
+export const Cache = ( options?: number | string | ( ( thisArg: AbstractRESTClient ) => boolean ) | ICacheOptions ): MethodDecorator =>
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
   switch ( true )
@@ -27,16 +27,17 @@ export const Cache = ( options?: number | string | ( () => boolean ) | ICacheOpt
     case typeof options === 'string': // just try to parse some timestamp
       cacheOptions.until = parseInt( options as string, 10 );
       break;
+    case typeof options === 'function':
+      cacheOptions.function = options as () => boolean;
+      break;
     case isObject( cacheOptions ) && !!options:
       cacheOptions.until = ( options as ICacheOptions ).until || undefined;
       cacheOptions.times = ( options as ICacheOptions ).times || undefined;
       if ( typeof ( options as ICacheOptions ).clearMethodPrefix === 'string' )
         cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
       break;
-    case typeof options === 'function':
-      cacheOptions.function = options as () => boolean;
   }
-  return ( target: DerivedAbstractApiClient, targetKey?: string | symbol ): void =>
+  return ( target: DerivedAbstractRESTClient, targetKey?: string | symbol ): void =>
   {
     const targetKeyString = targetKey.toString();
     // TODO: remove
@@ -54,7 +55,7 @@ export const Cache = ( options?: number | string | ( () => boolean ) | ICacheOpt
   };
 };
 
-export const CacheClear = <TClass extends AbstractApiClient>( targetKey: MethodNames<TClass> ) =>
+export const CacheClear = <TClass extends AbstractRESTClient>( targetKey: MethodNames<TClass> ) =>
   ( target: TClass, name: MethodNames<TClass>, descriptor: TypedPropertyDescriptor<( ...args: any[] ) => any> ) =>
   {
     const originalValue = descriptor.value;
@@ -78,11 +79,12 @@ const getCacheKey =
   return [ cacheUrl, headerArr.join(), cacheQuery.toString(), cacheResponseType ].join();
 };
 
-export const handleCache =
+export const handleCache = <T extends AbstractRESTClient>
 (
-  target: AbstractApiClient,
+  target: AbstractRESTClient,
   targetKey: string | symbol,
-  httpClient: HttpClient,
+  thisArg: AbstractRESTClient,
+  thisArgHttpClient: HttpClient,
   requestObject: HttpRequest<any>,
 ): Observable<HttpEvent<any>> | undefined =>
 {
@@ -101,6 +103,9 @@ export const handleCache =
   const cacheMapEntry = cacheMap.get( cacheMapKey );
   if ( cacheMapEntry ) switch ( true )
   {
+    case !!cacheOptions.function && cacheOptions.function( thisArg ):
+      [ returnRequest ] = cacheMapEntry;
+      break;
     case !!cacheOptions.until && ( +new Date ) < cacheMapEntry[1].until:
       [ returnRequest ] = cacheMapEntry;
       break;
@@ -112,7 +117,7 @@ export const handleCache =
   }
   if ( !returnRequest ) // first cache request
   {
-    returnRequest = httpClient.request( requestObject ).pipe( shareReplay() );
+    returnRequest = thisArgHttpClient.request( requestObject ).pipe( shareReplay() );
     const saveCacheOptions = extend( {}, cacheOptions );
     saveCacheOptions.until = cacheOptions.until && ( +new Date ) + cacheOptions.until;
     cacheMap.set( cacheMapKey, [ returnRequest, saveCacheOptions ] );

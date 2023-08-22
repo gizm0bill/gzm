@@ -2,7 +2,7 @@
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError, zip } from 'rxjs';
 import { catchError, share, switchMap, takeLast } from 'rxjs/operators';
-import { AbstractApiClient, DerivedAbstractApiClient, MetadataKeys } from './+';
+import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
 import { buildBody } from './body';
 import { handleCache } from './cache';
 import { buildHeaders } from './headers';
@@ -12,7 +12,7 @@ import { buildQueryParameters } from './query';
 // TODO: https://github.com/Microsoft/TypeScript/issues/4881
 // builds request method decorators
 const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
-  ( target: AbstractApiClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
+  ( target: AbstractRESTClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
   (
     // let oldValue = descriptor.value;
     descriptor.value = function( ...args: any[] ): Observable<any>
@@ -46,7 +46,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
         switchMap( ( [ baseUrl, headers, params ] ) =>
         {
           requestObject = new HttpRequest( method, baseUrl + requestUrl, body, { headers, params, responseType } );
-          return handleCache( target, targetKey, this.http, requestObject )
+          return handleCache( target, targetKey, this, this.http, requestObject )
             || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
         } ),
         takeLast( 1 ), // TODO: take only request end result for now...
@@ -62,9 +62,9 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
     descriptor
   );
 // TODO: type
-export function Error( handler: ( ...args: any[] ) => any )
+export function RESTClientError( handler: ( ...args: any[] ) => any )
 {
-  return <TClass extends DerivedAbstractApiClient>( target: TClass ): TClass =>
+  return <TClass extends DerivedAbstractRESTClient>( target: TClass ): TClass =>
     Reflect.defineMetadata( MetadataKeys.Error, handler, target ) as any;
 }
 
@@ -82,7 +82,7 @@ export const HEAD = requestMethodDecoratorFactory( 'HEAD' );
 export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );
 export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
 
-export { AbstractApiClient } from './+';
+export { AbstractRESTClient as AbstractApiClient } from './+';
 export { Body } from './body';
 export { Cache, CacheClear } from './cache';
 export { Header, Headers } from './headers';
