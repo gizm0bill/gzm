@@ -1,13 +1,12 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "dependencies": {
     "tslib": "^2.0.0"
   },
   "peerDependencies": {
-    "@angular/common": "^15.2.5",
-    "@angular/core": "^15.2.5",
-    "@angular-devkit/schematics": "^15.2.4",
+    "@angular/common": "^15.2.5 || ^16",
+    "@angular/core": "^15.2.5 || ^16",
     "reflect-metadata": "^0.1.13"
   },
   "description": "Angular REST Client utility library",

@@ -1,6 +1,6 @@
 {
   "name": "@gzm/material-phone-input",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "dependencies": {
     "tslib": "^2.0.0"
   },
@@ -8,7 +8,8 @@
     "@angular/common": "^15.2.5 || ^16",
     "@angular/core": "^15.2.5 || ^16",
     "@angular/forms": "^15.2.5 || ^16",
-    "@angular/material": "^15.2.5 || ^16"
+    "@angular/material": "^15.2.5 || ^16",
+    "libphonenumber-js": "^1.10.42"
   },
   "description": "Angular Material Phone Input",
   "main": "index.js",

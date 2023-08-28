@@ -7,14 +7,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MaterialPhoneInputComponent } from './component';
-import { SearchPipe } from './what-the-actual-fuck.pipe';
+import { SearchPipe } from './search.pipe';
 
-describe( 'NgxMatIntlTelInputComponent', () => {
+describe( 'MaterialPhoneInputComponent', () => {
   let component: MaterialPhoneInputComponent;
   let fixture: ComponentFixture<MaterialPhoneInputComponent>;
 
   beforeEach( waitForAsync( () => {
     TestBed.configureTestingModule( {
+      declarations: [ MaterialPhoneInputComponent, SearchPipe ],
       imports: [
         CommonModule,
         FormsModule,
@@ -23,8 +24,6 @@ describe( 'NgxMatIntlTelInputComponent', () => {
         MatButtonModule,
         MatDividerModule,
         ReactiveFormsModule,
-        MaterialPhoneInputComponent,
-        SearchPipe
       ],
     } ).compileComponents();
   } ) );
