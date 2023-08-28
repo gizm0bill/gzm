@@ -1,7 +1,7 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, Headers, Header, HEAD } from '.';
+import { AbstractRESTClient, Headers, Header, HEAD } from '.';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 
@@ -48,7 +48,7 @@ describe( 'Headers', () =>
     [ NAME_CLASS_WIDE_2 ]: () => VALUE_CLASS_WIDE_2,
     [ NAME_CLASS_WIDE_3 ]: VALUE_CLASS_WIDE_3,
   } )
-  class ApiClient extends AbstractApiClient
+  class ApiClient extends AbstractRESTClient
   {
     constructor
     (

@@ -49,6 +49,21 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
 
     forEachChild( sourceFile, node =>
     {
+      // TODO: export const errorHandler = <T extends AbstractApiClient>( _a: T, error: HttpErrorResponse, _: any, caught: Observable<any> ): Observable<string> =>
+      /* TODO:
+        export const factory = ( location: string ): any =>
+        {
+          class C extends ApiSrv
+          {
+            @GET( '…' )
+            smth(): Observable<HttpResponse<any>> { return; }
+          }
+          Error( errorHandler )( C );
+          BaseUrl( () => of( '…' ) )( C );
+          return new C();
+        };
+      */
+      // TODO: system Error without import from our lib - export class AuthTokenExpiredError extends Error {}
       // gather decorator calls, check later if has imports
       decoratorCalls = [
         ...decoratorCalls,

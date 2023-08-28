@@ -148,7 +148,47 @@
           }
         }
       }
-    }
+    },
+    "material-phone-input": {
+      "root": "libs/material-phone-input",
+      "sourceRoot": "libs/material-phone-input/src",
+      "projectType": "library",
+      "prefix": "mat-phone-input",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "tsConfig": "libs/material-phone-input/tsconfig.lib.json",
+            "project": "libs/material-phone-input/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "libs/material-phone-input/tsconfig.lib.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": ["zone.js", "zone.js/testing"],
+            "tsConfig": "libs/material-phone-input/tsconfig.spec.json",
+            "karmaConfig": "libs/material-phone-input/karma.conf.js",
+            "include": [
+              "libs/material-phone-input/src/**/*.spec.ts"
+            ]
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "libs/material-phone-input/**/*.ts",
+              "libs/material-phone-input/**/*.html"
+            ]
+          }
+        }
+      }
+    },
   },
   "cli": {
     "analytics": false,

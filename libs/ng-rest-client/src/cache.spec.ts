@@ -1,7 +1,7 @@
 import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
-import { AbstractApiClient, Cache, GET, CacheClear } from '.';
+import { AbstractRESTClient, Cache, GET, CacheClear } from '.';
 import { Observable } from 'rxjs';
 import { Query } from './query';
 import { tap } from 'rxjs/operators';
@@ -21,7 +21,7 @@ describe( 'Cache', () =>
 
   let httpTestingController: HttpTestingController;
 
-  class ApiClient extends AbstractApiClient
+  class ApiClient extends AbstractRESTClient
   {
     @GET( CACHE_URL_UNTIL ) @Cache( CACHE_UNTIL )
     testCacheUntil( @Query( 'some-arg' ) someArg: any ): Observable<any> { return; }

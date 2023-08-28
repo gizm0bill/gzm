@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Observable, zip, BehaviorSubject, throwError } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { AbstractApiClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, RESTClientError as ApiError } from '.';
+import { AbstractRESTClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, RESTClientError as ApiError } from '.';
 import { standardEncoding } from './query';
 
 describe( 'Common features', () =>
@@ -48,7 +48,7 @@ describe( 'Common features', () =>
   @Query( ( thisArg: ApiClient ) => thisArg.mockService.someSubject.pipe( take( 1 ) ), NO_ENCODE )
   @ApiError( ( { uniqueTestKey }: ApiClient, { status, statusText }: HttpErrorResponse, { url }: HttpRequest<any> ): Observable<string> =>
     throwError( new Error( [ status, statusText, url, uniqueTestKey ].join() ) ) )
-  class ApiClient extends AbstractApiClient
+  class ApiClient extends AbstractRESTClient
   {
     uniqueTestKey = Math.random();
     constructor
@@ -98,21 +98,21 @@ describe( 'Common features', () =>
 
   // static base url value
   @BaseUrl( CONFIG_JSON_VALUE )
-  class ApiClientA extends AbstractApiClient
+  class ApiClientA extends AbstractRESTClient
   {
     @HEAD( SOME_URL ) testBaseUrlA(): Observable<Response> { return; }
   }
 
   // get base url from some json path and extract value by provided key
   @BaseUrl( CONFIG_JSON, CONFIG_JSON_KEY )
-  class ApiClientB extends AbstractApiClient
+  class ApiClientB extends AbstractRESTClient
   {
     @HEAD( SOME_URL ) testBaseUrlB(): Observable<Response> { return; }
   }
 
   // get base url from Observable
   @BaseUrl( ( thisArg: ApiClientC ) => thisArg.http.get( CONFIG_JSON ).pipe( map( response => response[ CONFIG_JSON_KEY ] ) ) )
-  class ApiClientC extends AbstractApiClient
+  class ApiClientC extends AbstractRESTClient
   {
     @HEAD( SOME_URL ) testBaseUrlC(): Observable<Response> { return; }
   }

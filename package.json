@@ -7,7 +7,9 @@
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "build:rest-client": "ng build ng-rest-client --configuration=production  && cd libs/ng-rest-client && npm run build && cd ../../ && npx jasmine dist/ng-rest-client/schematics/**/*.spec.js",
+    "build:material-phone-input": "ng build material-phone-input --configuration=production  && cd libs/material-phone-input && npm run build && cd ../../ && npx jasmine dist/ng-rest-client/schematics/**/*.spec.js"
   },
   "private": true,
   "dependencies": {
@@ -17,10 +19,12 @@
     "@angular/compiler": "^15.2.5",
     "@angular/core": "^15.2.5",
     "@angular/forms": "^15.2.5",
+    "@angular/material": "^15.2.9",
     "@angular/platform-browser": "^15.2.5",
     "@angular/platform-browser-dynamic": "^15.2.5",
     "@angular/router": "^15.2.5",
     "core-js": "^3.32.1",
+    "libphonenumber-js": "^1.10.41",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~6.5.5",
     "tslib": "^2.6.2",
@@ -45,18 +49,18 @@
     "@typescript-eslint/parser": "5.43.0",
     "eslint": "^8.47.0",
     "jasmine": "^4.6.0",
-    "jasmine-core": "~3.6.0",
+    "jasmine-core": "^5.1.0",
     "jasmine-spec-reporter": "^5.0.2",
     "karma": "~6.3.2",
-    "karma-coverage": "^2.2.1",
-    "karma-firefox-launcher": "^2.1.2",
     "karma-chrome-launcher": "~3.1.0",
+    "karma-coverage": "^2.2.1",
     "karma-coverage-istanbul-reporter": "~3.0.2",
+    "karma-firefox-launcher": "^2.1.2",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "^1.6.0",
     "ng-packagr": "^15.2.2",
     "ts-node": "~8.8.2",
-    "typescript": "^5.1.6"
+    "typescript": "^4.9.5"
   },
   "engines": {
     "node": "^14.15.0 || >=16.10.0",

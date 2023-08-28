@@ -82,7 +82,7 @@ export const HEAD = requestMethodDecoratorFactory( 'HEAD' );
 export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );
 export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
 
-export { AbstractRESTClient as AbstractApiClient } from './+';
+export { AbstractRESTClient } from './+';
 export { Body } from './body';
 export { Cache, CacheClear } from './cache';
 export { Header, Headers } from './headers';

@@ -1,8 +1,8 @@
-import { TestBed, inject } from '@angular/core/testing';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractApiClient, GET, POST, PUT, DELETE, HEAD, PATCH, JSONP, OPTIONS } from '.';
+import { TestBed, inject } from '@angular/core/testing';
 import { Observable } from 'rxjs';
+import { AbstractRESTClient, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT } from '.';
 
 describe( 'Methods', () =>
 {
@@ -21,7 +21,7 @@ describe( 'Methods', () =>
 
   let httpTestingController: HttpTestingController;
 
-  class ApiClient extends AbstractApiClient
+  class ApiClient extends AbstractRESTClient
   {
     @GET( GET_URL ) testGet(): Observable<any> { return; }
 
