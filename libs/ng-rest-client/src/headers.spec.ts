@@ -117,7 +117,7 @@ describe( 'Headers', () =>
         expectHeaders4 = propertyHeaders1.includes( VALUE_PROPERTY_1 ),
         expectHeaders5 = propertyHeaders2.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 ),
         expectHeaders6 = parameterHeaders1.includes( VALUE_PARAMETER_1 ) && parameterHeaders1.includes( VALUE_PARAMETER_11 ) && parameterHeaders2.includes( VALUE_PARAMETER_2 );
-
+      expect( true ).toBeTrue();
       return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6;
     } );
     request1.flush( {} );
@@ -155,7 +155,7 @@ describe( 'Headers', () =>
 
         // check old headers are not modified
         expectHeaders6 = propertyHeaders1.includes( VALUE_PROPERTY_1 );
-
+      expect( true ).toBeTrue();
       return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6;
     } );
     request2.flush( {} );

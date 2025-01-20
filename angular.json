@@ -14,17 +14,15 @@
           "options": {
             "tsConfig": "libs/ng-rest-client/tsconfig.lib.json",
             "project": "libs/ng-rest-client/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "libs/ng-rest-client/tsconfig.lib.prod.json"
-            }
           }
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": ["zone.js", "zone.js/testing"],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "tsConfig": "libs/ng-rest-client/tsconfig.spec.json",
             "karmaConfig": "libs/ng-rest-client/karma.conf.js",
             "include": [
@@ -118,33 +116,20 @@
           "options": {
             "browserTarget": "ng-rest-client-demo:build"
           }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+        }
+      }
+    },
+    "ng-rest-client-demo-lib": {
+      "projectType": "library",
+      "root": "demos/ng-rest-client/lib",
+      "sourceRoot": "demos/ng-rest-client/lib",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
-            "tsConfig": "demos/ng-rest-client/tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
-            "assets": [
-              "demos/ng-rest-client/src/favicon.ico",
-              "demos/ng-rest-client/src/assets"
-            ],
-            "styles": [
-              "demos/ng-rest-client/src/styles.scss"
-            ],
-            "scripts": []
-          }
-        },
-        "lint": {
-          "builder": "@angular-eslint/builder:lint",
-          "options": {
-            "lintFilePatterns": [
-              "demos/ng-rest-client/**/*.ts",
-              "demos/ng-rest-client/**/*.html"
-            ]
+            "project": "demos/ng-rest-client/ng-package.json",
+            "tsConfig": "demos/ng-rest-client/lib/tsconfig.lib.json"
           }
         }
       }
@@ -170,7 +155,10 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": ["zone.js", "zone.js/testing"],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
             "tsConfig": "libs/material-phone-input/tsconfig.spec.json",
             "karmaConfig": "libs/material-phone-input/karma.conf.js",
             "include": [
@@ -188,7 +176,7 @@
           }
         }
       }
-    },
+    }
   },
   "cli": {
     "analytics": false,

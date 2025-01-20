@@ -107,7 +107,11 @@ export const buildHeaders = ( thisArg: AbstractRESTClient, target, targetKey, ar
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
     {
       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>
-        headersObject[ headerKey ] = [ ...( headersObject[ headerKey ] || [] ), ...( Array.isArray( headerValue ) ? headerValue : [ headerValue ] ) ] );
+        headersObject[ headerKey ] = [
+          ...( headersObject[ headerKey ] || [] ),
+          ...( Array.isArray( headerValue ) ? headerValue : [ headerValue ] )
+        ].filter( headerValue => headerValue != null )
+      );
       return headersObject;
     }, {} ) ) ),
   );

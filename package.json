@@ -33,6 +33,7 @@
     "@angular-devkit/build-angular": "^16.2.16",
     "@angular-devkit/core": "^16.2.16",
     "@angular-devkit/schematics": "^16.2.16",
+    "@angular-devkit/schematics-cli": "^16.2.16",
     "@angular-eslint/builder": "^16.3.1",
     "@angular-eslint/eslint-plugin": "^16.3.1",
     "@angular-eslint/eslint-plugin-template": "^16.3.1",
@@ -59,7 +60,7 @@
     "karma-jasmine-html-reporter": "^1.6.0",
     "ng-packagr": "^16.2.3",
     "ts-node": "~8.8.2",
-    "typescript": "^4.9.5"
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": "^14.15.0 || >=16.10.0",

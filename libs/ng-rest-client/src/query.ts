@@ -28,7 +28,7 @@ export const NO_ENCODE = Symbol( 'apiClient:Query.noEncode' );
 export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: AbstractRESTClient, targetKey: string | symbol, args: any[] ): Observable<any> =>
 {
   const
-    query: Observable<any[]>[] = [],
+    query: Observable<any>[] = [],
     classWideQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target.constructor ) || [],
     methodQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey ) || [],
     propertyQuery = ( Reflect.getOwnMetadata( MetadataKeys.Query, target ) || [] )
@@ -83,7 +83,7 @@ export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: Abstr
         queryObject[ queryKey ] = [ ...( queryObject[ queryKey ] || [] ), ...queryValue ];
       } ),
       queryObject
-    ), {} ), encoder: new PassThroughCodec } ) ),
+    ), {} as any ), encoder: new PassThroughCodec } ) ),
   );
 };
 

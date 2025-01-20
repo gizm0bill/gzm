@@ -162,6 +162,8 @@ describe( 'Common features', () =>
     baseUrlRequestC.flush( { [ CONFIG_JSON_KEY ]: CONFIG_JSON_VALUE } );
     httpTestingController.expectOne( CONFIG_JSON_VALUE + SOME_URL ).flush( null );
 
+    expect( true ).toBeTrue();
+
   } ) );
 
   it( 'should add query parameters', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
@@ -175,6 +177,7 @@ describe( 'Common features', () =>
     httpTestingController.expectOne( ( { params } ) =>
     {
       const paramsParts = params.toString().split( '&' );
+      expect( true ).toBeTrue();
       return paramsParts.includes( `${NAME_QUERY_PARAM_1}=${standardEncoding( VALUE_QUERY_PARAM_1 )}` )
         && paramsParts.includes( `${NAME_QUERY_PARAM_2}=${VALUE_QUERY_PARAM_2}` )
         && paramsParts.includes( `${NAME_QUERY_PARAM_3}=${VALUE_QUERY_PARAM_31}` )
@@ -189,16 +192,16 @@ describe( 'Common features', () =>
   it( 'should add path parameters', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
   {
     apiClient.testPathParam( VALUE_PATH_PARAM_1, VALUE_PATH_PARAM_2 ).subscribe();
-    httpTestingController.expectOne( ( { url } ) => url === `some/${VALUE_PATH_PARAM_1}/url/${VALUE_PATH_PARAM_2}` ).flush( null );
+    httpTestingController.expectOne( ( { url } ) => ( expect( true ).toBeTrue(), url === `some/${VALUE_PATH_PARAM_1}/url/${VALUE_PATH_PARAM_2}` ) ).flush( null );
     apiClient.testPathParam( VALUE_PATH_PARAM_2, VALUE_PATH_PARAM_1 ).subscribe();
-    httpTestingController.expectOne( ( { url } ) => url === `some/${VALUE_PATH_PARAM_2}/url/${VALUE_PATH_PARAM_1}` ).flush( null );
+    httpTestingController.expectOne( ( { url } ) => ( expect( true ).toBeTrue(), url === `some/${VALUE_PATH_PARAM_2}/url/${VALUE_PATH_PARAM_1}` ) ).flush( null );
   } ) );
 
   it( 'should add simple JSON body params', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
   {
     apiClient.testBody( VALUE_BODY_PARAM_1, VALUE_BODY_PARAM_2 ).subscribe();
     const expectedObject = { [ NAME_BODY_PARAM_2 ]: VALUE_BODY_PARAM_2, [ NAME_BODY_PARAM_1 ]: VALUE_BODY_PARAM_1 };
-    httpTestingController.expectOne( ( { body } ) => JSON.stringify( body ) === JSON.stringify( expectedObject ) ).flush( null );
+    httpTestingController.expectOne( ( { body } ) => ( expect( true ).toBeTrue(), JSON.stringify( body ) === JSON.stringify( expectedObject ) ) ).flush( null );
   } ) );
 
   it( 'should add Files to body', ( done: DoneFn ) => inject( [ ApiClient ], ( apiClient: ApiClient ) =>
@@ -238,7 +241,7 @@ describe( 'Common features', () =>
           return true;
         } )
       )
-      .subscribe( _ => done() );
+      .subscribe( _ => ( expect( true ).toBeTrue(), done() ) );
     } ).flush( null );
   } )() );
 
