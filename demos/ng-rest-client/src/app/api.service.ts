@@ -1,6 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { AbstractApiClient, Error } from '@gzm/ng-rest-client';
-import { throwError } from 'rxjs';
-@Error(( apiService: ApiService, error: HttpErrorResponse ) => throwError( () => error ))
-export class ApiService extends AbstractApiClient {}
-Error(( apiService: ApiService, error: HttpErrorResponse ) => throwError( () => error ))( ApiService );
+import { AbstractRESTClient, BaseUrl, RESTClientError } from '@gzm/ng-rest-client';
+import { of, throwError } from 'rxjs';
+@RESTClientError(( apiService: ApiService, error: HttpErrorResponse ) => throwError( () => error ))
+@BaseUrl( ( thisArg: ApiService ) => of( thisArg.a ) )
+export class ApiService extends AbstractRESTClient {
+  constructor( private a: string, private b: number ) {
+    super();
+  }
+}
+RESTClientError(( apiService: ApiService, error: HttpErrorResponse ) => throwError( () => error ))( class extends AbstractRESTClient {} );

@@ -23,18 +23,18 @@ class PassThroughCodec implements HttpParameterCodec
   decodeValue( value: string ): string { return value; }
 }
 
-export const NO_ENCODE = Symbol( 'apiClient:Query.noEncode' );
+export const NO_ENCODE = Symbol( 'RESTClient:Query.noEncode' );
 
-export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: AbstractRESTClient, targetKey: string | symbol, args: any[] ): Observable<any> =>
+export const buildQueryParameters = <T extends AbstractRESTClient>( thisArg: T, target: T, targetKey: string | symbol, args: any[] ): Observable<any> =>
 {
   const
     query: Observable<any>[] = [],
     classWideQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target.constructor ) || [],
     methodQuery = Reflect.getOwnMetadata( MetadataKeys.Query, target, targetKey ) || [],
     propertyQuery = ( Reflect.getOwnMetadata( MetadataKeys.Query, target ) || [] )
-      .map( ( queryDef: Array<{ [name: string]: any }> ) =>
+      .map( ( queryDef: { [name: string]: any } ) =>
       (
-        Object.entries( queryDef ).forEach( ( [ queryKey, queryProperty ]: [ string, any ] ) => queryDef[queryKey] = thisArg[queryProperty] ),
+        Object.entries( queryDef ).forEach( ( [ queryKey, queryProperty ]: [string, keyof T] ) => queryDef[queryKey] = thisArg[queryProperty] ),
         queryDef
       ) );
 
@@ -71,14 +71,14 @@ export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: Abstr
   } );
   return zip( ...query ).pipe
   (
-    defaultIfEmpty( [] ),
-    map( queryResults => new HttpParams( { fromObject: queryResults.reduce( ( queryObject, [ queryResult, ...extraOptions ]: [ any, ...any[] ] ) =>
+    defaultIfEmpty( [] as any[] ),
+    map( queryResults => new HttpParams( { fromObject: queryResults.reduce( ( queryObject, [ queryResult, ...extraOptions ]: [ Record<string, string|string[]>, ...any[] ] ) =>
     (
-      Object.entries( queryResult ).forEach( ( [ queryKey, queryValue ]: [ string, string|string[] ] ) =>
+      Object.entries( queryResult ).forEach( ( [ queryKey, queryValue ] ) =>
       {
         queryValue = Array.isArray( queryValue )
           ? queryValue.map( value => !extraOptions.includes( NO_ENCODE ) ? standardEncoding( value ) : value )
-          : [ !extraOptions.includes( NO_ENCODE ) ? standardEncoding( queryValue ) : queryValue ];
+          : [ !extraOptions.includes( NO_ENCODE ) ? standardEncoding( queryValue) : queryValue ];
         if ( !extraOptions.includes( NO_ENCODE ) ) queryKey = standardEncoding( queryKey );
         queryObject[ queryKey ] = [ ...( queryObject[ queryKey ] || [] ), ...queryValue ];
       } ),
@@ -88,7 +88,7 @@ export const buildQueryParameters = ( thisArg: AbstractRESTClient, target: Abstr
 };
 
 
-export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
+export const Query = ( keyOrParams: any, ...extraOptions: any[] ): ClassDecorator & ParameterDecorator =>
 {
   function decorator <TClass extends DerivedAbstractRESTClient>( target: TClass ): void;
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;
@@ -97,17 +97,15 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ) =>
     if ( parameterIndex !== undefined ) // on param
     {
       const metadataKey = MetadataKeys.Query;
-      const existingParams: [ number, string, ...any[] ][] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
+      const existingParams: [ number, string, ...any[] ][] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ?? '' ) || [];
       existingParams.push( [ parameterIndex, keyOrParams, ...extraOptions ] );
-      Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
+      return Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey ?? undefined as unknown as string );
     }
-    else // on class
-    {
-      const metadataKey = MetadataKeys.Query;
-      const existingQuery: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingQuery.push( [ undefined, keyOrParams, ...extraOptions ] );
-      Reflect.defineMetadata( metadataKey, existingQuery, target, undefined );
-    }
+    // on class
+    const metadataKey = MetadataKeys.Query;
+    const existingQuery: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+    existingQuery.push( [ undefined, keyOrParams, ...extraOptions ] );
+    Reflect.defineMetadata( metadataKey, existingQuery, target );
   }
   return decorator;
 };

@@ -1,5 +1,5 @@
 
-import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
+import { HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError, zip } from 'rxjs';
 import { catchError, share, switchMap, takeLast } from 'rxjs/operators';
 import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
@@ -12,17 +12,17 @@ import { buildQueryParameters } from './query';
 // TODO: https://github.com/Microsoft/TypeScript/issues/4881
 // builds request method decorators
 const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' ) =>
-  ( target: AbstractRESTClient, targetKey?: string | symbol, descriptor?: TypedPropertyDescriptor<( ...args: any[] ) => Observable<any>> ) =>
+  ( target: AbstractRESTClient, targetKey: string | symbol, descriptor: PropertyDescriptor ): PropertyDescriptor =>
   (
     // let oldValue = descriptor.value;
-    descriptor.value = function( ...args: any[] ): Observable<any>
+    descriptor.value = function( this: AbstractRESTClient, ...args: any[] )
     {
       if ( this.http === undefined )
         throw new TypeError( `Property 'http' missing in ${this.constructor}. Check constructor dependencies!` );
 
       const
         // path params
-        requestUrl = buildPathParams( target, targetKey, args, url ),
+        requestUrl = buildPathParams( target, targetKey || '', args, url ),
 
         // query params
         params$ = buildQueryParameters( this, target, targetKey, args ),
@@ -47,7 +47,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
         {
           requestObject = new HttpRequest( method, baseUrl + requestUrl, body, { headers, params, responseType } );
           return handleCache( target, targetKey, this, this.http, requestObject )
-            || ( this.http as HttpClient ).request( requestObject ).pipe( share() );
+            || this.http.request( requestObject ).pipe( share() );
         } ),
         takeLast( 1 ), // TODO: take only request end result for now...
         catchError( ( error: HttpErrorResponse, caught: Observable<unknown> ) => errorHandler
@@ -61,6 +61,7 @@ const requestMethodDecoratorFactory = ( method: string ) => ( url: string = '' )
     },
     descriptor
   );
+
 // TODO: type
 export function RESTClientError( handler: ( ...args: any[] ) => any )
 {
@@ -68,15 +69,14 @@ export function RESTClientError( handler: ( ...args: any[] ) => any )
     Reflect.defineMetadata( MetadataKeys.Error, handler, target ) as any;
 }
 
-
 export const Type = ( arg: 'arraybuffer' | 'blob' | 'json' | 'text' ): MethodDecorator =>
-  ( target: object, targetKey?: string | symbol ): void => Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey );
+  ( target: object, targetKey?: string | symbol ): void => Reflect.defineMetadata( MetadataKeys.Type, arg, target, targetKey || undefined as unknown as string );
 
 // define method decorators
+export const GET = requestMethodDecoratorFactory( 'GET' );
 export const POST = requestMethodDecoratorFactory( 'POST' );
 export const PUT = requestMethodDecoratorFactory( 'PUT' );
 export const PATCH = requestMethodDecoratorFactory( 'PATCH' );
-export const GET = requestMethodDecoratorFactory( 'GET' );
 export const DELETE = requestMethodDecoratorFactory( 'DELETE' );
 export const HEAD = requestMethodDecoratorFactory( 'HEAD' );
 export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );

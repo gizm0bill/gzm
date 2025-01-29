@@ -18,14 +18,12 @@ export function Headers( headers: {} )
     {
       const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
       existingHeaders.push( headers );
-      Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
+      return Reflect.defineMetadata( metadataKey, existingHeaders, target, targetKey );
     }
-    else // class type
-    {
-      const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
-      existingHeaders.push( headers );
-      Reflect.defineMetadata( metadataKey, existingHeaders, target, undefined );
-    }
+    // class type
+    const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
+    existingHeaders.push( headers );
+    return Reflect.defineMetadata( metadataKey, existingHeaders, target );
   }
   return decorator;
 }
@@ -42,7 +40,7 @@ export function Header( key?: string )
   {
     // TODO: check constructor: typeof target === 'function'
     const
-      saveToKey = parameterIndex !== undefined ? propertyKey : undefined, // if no parameterIndex, it's a property header
+      saveToKey = parameterIndex !== undefined ? propertyKey : undefined as unknown as string, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
       existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
@@ -52,19 +50,17 @@ export function Header( key?: string )
   return decorator;
 }
 
-export const buildHeaders = ( thisArg: AbstractRESTClient, target, targetKey, args: unknown[] ): Observable<HttpHeaders> =>
+export const buildHeaders = ( thisArg: AbstractRESTClient, target: any, targetKey: string | symbol, args: unknown[] ): Observable<HttpHeaders> =>
 {
   const
     headers: Observable<unknown>[] = [],
     classWideHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target.constructor ) || [],
     methodHeaders = Reflect.getOwnMetadata( MetadataKeys.Header, target, targetKey ) || [];
   const propertyHeaders = ( Reflect.getOwnMetadata( MetadataKeys.Header, target ) || [] )
-      .map( ( headerDef: Array<{ [name: string]: unknown }> ) =>
+      .map( ( headerDef: { [name: string]: keyof DerivedAbstractRESTClient } ) =>
       {
         const headerValues = Object.assign( {}, headerDef );
-        Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ]: [ string, any ] ) => {
-          headerValues[headerKey] = thisArg[headerProperty];
-        } );
+        Object.entries( headerDef ).forEach( ( [ headerKey, headerProperty ] ) => ( headerValues[headerKey] = thisArg[headerProperty] ) );
         return headerValues;
       } );
 
@@ -82,7 +78,7 @@ export const buildHeaders = ( thisArg: AbstractRESTClient, target, targetKey, ar
         headers.push( of( { [ headerDef[1] ]: args[ headerDef[0] ] } ) );
         break;
       default: // is of Object type, method headers
-        Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ]: [ string, Function|Observable<unknown> ] ) =>
+        Object.entries( headerDef ).forEach( ( [ headerKey, headerForm ] ) =>
         {
           switch ( true )
           {
@@ -103,7 +99,7 @@ export const buildHeaders = ( thisArg: AbstractRESTClient, target, targetKey, ar
   } );
   return zip( ...headers ).pipe
   (
-    defaultIfEmpty( [] ),
+    defaultIfEmpty( [] as any[] ),
     map( headerResults => new HttpHeaders( headerResults.reduce( ( headersObject, currentHeaderResults ) =>
     {
       Object.entries( currentHeaderResults ).forEach( ( [ headerKey, headerValue ] ) =>

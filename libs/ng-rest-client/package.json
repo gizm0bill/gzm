@@ -1,19 +1,19 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.8",
   "dependencies": {
     "tslib": "^2.0.0"
   },
   "peerDependencies": {
     "@angular/common": "^15.2.5 || ^16",
     "@angular/core": "^15.2.5 || ^16",
+    "typescript": "^4",
     "reflect-metadata": "^0.1.13"
   },
   "description": "Angular REST Client utility library",
   "main": "index.js",
   "scripts": {
-    "test": "ng test",
-    "build": "tsc -p tsconfig.schematics.json && cp schematics/*.json ../../dist/ng-rest-client/schematics/"
+    "build:schematics": "tsc -p tsconfig.schematics.json && cp schematics/*.json ../../dist/ng-rest-client/schematics/"
   },
   "ng-update": {
     "migrations": "./schematics/migration.json"

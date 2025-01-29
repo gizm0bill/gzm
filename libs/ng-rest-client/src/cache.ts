@@ -1,7 +1,7 @@
 import { HttpClient, HttpEvent, HttpHeaders, HttpParams, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
-import { AbstractRESTClient, DerivedAbstractRESTClient, extend, isObject, MetadataKeys, MethodNames } from './+';
+import { AbstractRESTClient, extend, isObject, MetadataKeys, MethodNames } from './+';
 
 export const cacheMap = new Map<string, [Observable<HttpEvent<any>>, ICacheOptions]>();
 
@@ -13,7 +13,8 @@ export interface ICacheOptions
   forever?: boolean; // TODO: implement
   clearMethodPrefix: string; // TODO: remove
 }
-export const Cache = ( options?: number | string | ( ( thisArg: AbstractRESTClient ) => boolean ) | ICacheOptions ): MethodDecorator =>
+
+export const Cache = ( options?: number | string | ((thisArg: any) => boolean) | ICacheOptions ): MethodDecorator =>
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
   switch ( true )
@@ -37,21 +38,21 @@ export const Cache = ( options?: number | string | ( ( thisArg: AbstractRESTClie
         cacheOptions.clearMethodPrefix = ( options as ICacheOptions ).clearMethodPrefix;
       break;
   }
-  return ( target: DerivedAbstractRESTClient, targetKey?: string | symbol ): void =>
+  return ( target, targetKey?: string | symbol ) =>
   {
-    const targetKeyString = targetKey.toString();
+    const targetKeyString = targetKey?.toString();
     // TODO: remove
     Object.defineProperty( target,
-      `${cacheOptions.clearMethodPrefix}${targetKeyString[0].toUpperCase()}${targetKeyString.slice( 1 )}`,
+      `${cacheOptions.clearMethodPrefix}${targetKeyString?.[0].toUpperCase()}${targetKeyString?.slice( 1 )}`,
       {
         writable: false,
         value()
         {
-          Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey );
+          Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey || undefined as unknown as string );
           return this;
         }
     } );
-    Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey );
+    Reflect.defineMetadata( MetadataKeys.Cache, cacheOptions, target, targetKey || undefined as unknown as string );
   };
 };
 
@@ -62,7 +63,7 @@ export const CacheClear = <TClass extends AbstractRESTClient>( targetKey: Method
     descriptor.value = function()
     {
       Reflect.defineMetadata( MetadataKeys.ClearCache, true, target, targetKey as any );
-      return originalValue.call( this );
+      return originalValue?.call( this );
     };
   };
 
@@ -74,23 +75,23 @@ const getCacheKey =
   cacheResponseType?: string
 ) =>
 {
-  const headerArr = [];
-  cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, cacheHeaders.getAll( name ).join() ) );
+  const headerArr: string[] = [];
+  cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, (cacheHeaders?.getAll( name ) || []).join() ) );
   return [ cacheUrl, headerArr.join(), cacheQuery.toString(), cacheResponseType ].join();
 };
 
 export const handleCache = <T extends AbstractRESTClient>
 (
-  target: AbstractRESTClient,
+  target: T,
   targetKey: string | symbol,
-  thisArg: AbstractRESTClient,
+  thisArg: T,
   thisArgHttpClient: HttpClient,
   requestObject: HttpRequest<any>,
 ): Observable<HttpEvent<any>> | undefined =>
 {
   const cacheOptions: ICacheOptions = Reflect.getOwnMetadata( MetadataKeys.Cache, target, targetKey );
   if ( !cacheOptions ) return undefined;
-  let returnRequest: Observable<HttpEvent<any>>;
+  let returnRequest: Observable<HttpEvent<any>> | undefined = undefined;
   const
     { url, headers, params, responseType } = requestObject,
     cacheMapKey = getCacheKey( url, headers, params, responseType ),
@@ -106,11 +107,11 @@ export const handleCache = <T extends AbstractRESTClient>
     case !!cacheOptions.function && cacheOptions.function( thisArg ):
       [ returnRequest ] = cacheMapEntry;
       break;
-    case !!cacheOptions.until && ( +new Date ) < cacheMapEntry[1].until:
+    case !!cacheOptions.until && ( +new Date ) < cacheMapEntry?.[1]?.until!:
       [ returnRequest ] = cacheMapEntry;
       break;
-    case !!cacheOptions.times && cacheMapEntry[1].times > 0:
-      cacheMapEntry[1].times--; // decrease called times
+    case !!cacheOptions.times && cacheMapEntry[1].times! > 0:
+      cacheMapEntry[1].times!--; // decrease called times
       [ returnRequest ] = cacheMapEntry;
       cacheMap.set( cacheMapKey, [ returnRequest, cacheMapEntry[1] ] );
       break;

@@ -2,7 +2,7 @@ import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AbstractRESTClient, Headers, Header, HEAD } from '.';
-import { Observable, BehaviorSubject, of } from 'rxjs';
+import { Observable, BehaviorSubject, of, NEVER } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 describe( 'Headers', () =>
@@ -71,7 +71,7 @@ describe( 'Headers', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet( @Header( NAME_PARAMETER_1 ) h1?: string, @Header( NAME_PARAMETER_1 ) h11?: string, @Header( NAME_PARAMETER_2 ) h2?: string ): Observable<any> { return; }
+    testGet( @Header( NAME_PARAMETER_1 ) h1?: string, @Header( NAME_PARAMETER_1 ) h11?: string, @Header( NAME_PARAMETER_2 ) h2?: string ): Observable<any> { return NEVER; }
   }
 
   beforeEach( () =>
@@ -111,14 +111,15 @@ describe( 'Headers', () =>
         propertyHeaders2 = headers.getAll( NAME_PROPERTY_2 ),
         parameterHeaders1 = headers.getAll( NAME_PARAMETER_1 ),
         parameterHeaders2 = headers.getAll( NAME_PARAMETER_2 ),
-        expectHeaders1 = classWideHeaders1.includes( VALUE_CLASS_WIDE_1 ) && classWideHeaders1.includes( VALUE_CLASS_WIDE_2 ),
-        expectHeaders2 = classWideHeaders2.includes( VALUE_CLASS_WIDE_2 ) && classWideHeaders2.includes( VALUE_CLASS_WIDE_3 ),
-        expectHeaders3 = classWideHeaders3.includes( VALUE_CLASS_WIDE_3 ),
-        expectHeaders4 = propertyHeaders1.includes( VALUE_PROPERTY_1 ),
-        expectHeaders5 = propertyHeaders2.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 ),
-        expectHeaders6 = parameterHeaders1.includes( VALUE_PARAMETER_1 ) && parameterHeaders1.includes( VALUE_PARAMETER_11 ) && parameterHeaders2.includes( VALUE_PARAMETER_2 );
+        expectHeaders1 = classWideHeaders1?.includes( VALUE_CLASS_WIDE_1 ) && classWideHeaders1.includes( VALUE_CLASS_WIDE_2 ),
+        expectHeaders2 = classWideHeaders2?.includes( VALUE_CLASS_WIDE_2 ) && classWideHeaders2.includes( VALUE_CLASS_WIDE_3 ),
+        expectHeaders3 = classWideHeaders3?.includes( VALUE_CLASS_WIDE_3 ),
+        expectHeaders4 = propertyHeaders1?.includes( VALUE_PROPERTY_1 ),
+        expectHeaders5 = propertyHeaders2?.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 ),
+        expectHeaders6 = parameterHeaders1?.includes( VALUE_PARAMETER_1 ) && parameterHeaders1.includes( VALUE_PARAMETER_11 ) && parameterHeaders2?.includes( VALUE_PARAMETER_2 );
       expect( true ).toBeTrue();
-      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6;
+      debugger
+      return !!(expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6);
     } );
     request1.flush( {} );
 
@@ -147,16 +148,16 @@ describe( 'Headers', () =>
 
         propertyHeaders1 = headers.getAll( NAME_PROPERTY_1 ),
 
-        expectHeaders1 = allHeaders1.includes( VALUE_FOR_METHOD_1 ) && allHeaders1.includes( VALUE_FOR_METHOD_2 ),
-        expectHeaders2 = allHeaders2.includes( VALUE_FOR_METHOD_2 ) && allHeaders2.includes( VALUE_FOR_METHOD_3 ),
-        expectHeaders3 = allHeaders3.includes( VALUE_FOR_METHOD_3 ),
-        expectHeaders4 = allHeaders4.includes( VALUE_CLASS_WIDE_1 ) && allHeaders4.includes( VALUE_CLASS_WIDE_2 ),
-        expectHeaders5 = allHeaders5.includes( VALUE_CLASS_WIDE_3 ) && allHeaders5.includes( VALUE_CLASS_WIDE_2 ),
+        expectHeaders1 = allHeaders1?.includes( VALUE_FOR_METHOD_1 ) && allHeaders1.includes( VALUE_FOR_METHOD_2 ),
+        expectHeaders2 = allHeaders2?.includes( VALUE_FOR_METHOD_2 ) && allHeaders2.includes( VALUE_FOR_METHOD_3 ),
+        expectHeaders3 = allHeaders3?.includes( VALUE_FOR_METHOD_3 ),
+        expectHeaders4 = allHeaders4?.includes( VALUE_CLASS_WIDE_1 ) && allHeaders4.includes( VALUE_CLASS_WIDE_2 ),
+        expectHeaders5 = allHeaders5?.includes( VALUE_CLASS_WIDE_3 ) && allHeaders5.includes( VALUE_CLASS_WIDE_2 ),
 
         // check old headers are not modified
-        expectHeaders6 = propertyHeaders1.includes( VALUE_PROPERTY_1 );
+        expectHeaders6 = propertyHeaders1?.includes( VALUE_PROPERTY_1 );
       expect( true ).toBeTrue();
-      return expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6;
+      return !!(expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6);
     } );
     request2.flush( {} );
   } ) );

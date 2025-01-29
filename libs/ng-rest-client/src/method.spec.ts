@@ -1,7 +1,7 @@
 import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, inject } from '@angular/core/testing';
-import { Observable } from 'rxjs';
+import { NEVER, Observable } from 'rxjs';
 import { AbstractRESTClient, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT } from '.';
 
 describe( 'Methods', () =>
@@ -23,21 +23,21 @@ describe( 'Methods', () =>
 
   class ApiClient extends AbstractRESTClient
   {
-    @GET( GET_URL ) testGet(): Observable<any> { return; }
+    @GET( GET_URL ) testGet(): Observable<any> { return NEVER; }
 
-    @POST( POST_URL ) testPost(): Observable<any> { return; }
+    @POST( POST_URL ) testPost(): Observable<any> { return NEVER; }
 
-    @PUT( PUT_URL ) testPut(): Observable<any> { return; }
+    @PUT( PUT_URL ) testPut(): Observable<any> { return NEVER; }
 
-    @PATCH( PATCH_URL ) testPatch(): Observable<any> { return; }
+    @PATCH( PATCH_URL ) testPatch(): Observable<any> { return NEVER; }
 
-    @JSONP( JSONP_URL ) testJsonp(): Observable<any> { return; }
+    @JSONP( JSONP_URL ) testJsonp(): Observable<any> { return NEVER; }
 
-    @DELETE( DELETE_URL ) testDelete(): Observable<any> { return; }
+    @DELETE( DELETE_URL ) testDelete(): Observable<any> { return NEVER; }
 
-    @HEAD( HEAD_URL ) testHead(): Observable<any> { return; }
+    @HEAD( HEAD_URL ) testHead(): Observable<any> { return NEVER; }
 
-    @OPTIONS( OPTIONS_URL ) testOptions(): Observable<any> { return; }
+    @OPTIONS( OPTIONS_URL ) testOptions(): Observable<any> { return NEVER; }
   }
 
   beforeEach( () =>

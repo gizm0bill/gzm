@@ -4,6 +4,11 @@
     "ng-add": {
       "description": "Add @gzm/ng-rest-client to the project",
       "factory": "./ng-add/index#ngAdd"
+    },
+    "migration-v2": {
+      "version": "2.0.0-0",
+      "description": "Updates @gzm/ng-rest-client to v2",
+      "factory": "./ng-update/index#updateToV2"
     }
   }
 }

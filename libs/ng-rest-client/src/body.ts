@@ -34,7 +34,7 @@ export const Body = ( key?: string, ...extraOptions: any[] ) =>
   ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
-      saveToKey = parameterIndex !== undefined ? propertyKey : undefined,
+      saveToKey = parameterIndex !== undefined ? propertyKey : undefined as unknown as string,
       metadataKey = MetadataKeys.Body,
       existingParams: any[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 

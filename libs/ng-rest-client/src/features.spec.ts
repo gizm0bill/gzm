@@ -1,7 +1,7 @@
 import { TestBed, inject } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { Observable, zip, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, zip, BehaviorSubject, throwError, NEVER } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { AbstractRESTClient, Body, POST, HEAD, Path, Query, NO_ENCODE, BaseUrl, RESTClientError as ApiError } from '.';
 import { standardEncoding } from './query';
@@ -62,7 +62,7 @@ describe( 'Common features', () =>
     (
       @Body( NAME_BODY_PARAM_1 ) body1: string,
       @Body( NAME_BODY_PARAM_2 ) body2: string
-    ): Observable<any> { return; }
+    ): Observable<any> { return NEVER; }
 
     @POST( SOME_URL )
     testFileBody
@@ -70,14 +70,14 @@ describe( 'Common features', () =>
       @Body( NAME_BODY_PARAM_1 ) body1: File,
       @Body( NAME_BODY_PARAM_2 ) body2: File,
       @Body( NAME_BODY_PARAM_3 ) body3: string
-    ): Observable<any> { return; }
+    ): Observable<any> { return NEVER; }
 
     @HEAD( PATH_PARAM_URL )
     testPathParam
     (
       @Path( NAME_PATH_PARAM_1 ) path1: string,
       @Path( NAME_PATH_PARAM_2 ) path2: string
-    ): Observable<any> { return; }
+    ): Observable<any> { return NEVER; }
 
     @HEAD( SOME_URL )
     testQuery
@@ -86,9 +86,9 @@ describe( 'Common features', () =>
       @Query( NAME_QUERY_PARAM_2, NO_ENCODE ) query2: string,
       @Query( NAME_QUERY_PARAM_3 ) query31: string,
       @Query( NAME_QUERY_PARAM_3 ) query32: string,
-    ): Observable<any> { return; }
+    ): Observable<any> { return NEVER; }
 
-    @HEAD( SOME_URL ) testError(): Observable<any> { return; }
+    @HEAD( SOME_URL ) testError(): Observable<any> { return NEVER; }
   }
 
   const
@@ -100,21 +100,26 @@ describe( 'Common features', () =>
   @BaseUrl( CONFIG_JSON_VALUE )
   class ApiClientA extends AbstractRESTClient
   {
-    @HEAD( SOME_URL ) testBaseUrlA(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlA(): Observable<Response> { return NEVER; }
   }
 
   // get base url from some json path and extract value by provided key
   @BaseUrl( CONFIG_JSON, CONFIG_JSON_KEY )
   class ApiClientB extends AbstractRESTClient
   {
-    @HEAD( SOME_URL ) testBaseUrlB(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlB(): Observable<Response> { return NEVER; }
   }
 
   // get base url from Observable
-  @BaseUrl( ( thisArg: ApiClientC ) => thisArg.http.get( CONFIG_JSON ).pipe( map( response => response[ CONFIG_JSON_KEY ] ) ) )
+  @BaseUrl( ( thisArg: ApiClientC ) => thisArg.http.get( CONFIG_JSON ).pipe( map( response => (response as any)[ CONFIG_JSON_KEY ] ) ) )
   class ApiClientC extends AbstractRESTClient
   {
-    @HEAD( SOME_URL ) testBaseUrlC(): Observable<Response> { return; }
+    @HEAD( SOME_URL ) testBaseUrlC(): Observable<Response> { return NEVER; }
+
+    constructor(
+      private readonly test: string,
+      private readonly test2: string = 'test2'
+    ) { super(); }
   }
 
   beforeEach( () =>
@@ -128,7 +133,7 @@ describe( 'Common features', () =>
         { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( HttpClient ), TestBed.inject( MockService ) ) },
         { provide: ApiClientA, useFactory: () => new ApiClientA() },
         { provide: ApiClientB, useFactory: () => new ApiClientB() },
-        { provide: ApiClientC, useFactory: () => new ApiClientC() },
+        { provide: ApiClientC, useFactory: () => new ApiClientC( 'x' ) },
       ]
     } );
     httpTestingController = TestBed.inject( HttpTestingController );
@@ -168,6 +173,7 @@ describe( 'Common features', () =>
 
   it( 'should add query parameters', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
+    debugger;
     mockService.someSubject.next
     ( {
       [ NAME_CLASS_WIDE_QUERY_PARAM_1 ]: VALUE_CLASS_WIDE_QUERY_PARAM_1,
@@ -217,8 +223,9 @@ describe( 'Common features', () =>
       const
         expectedKeys = [ NAME_BODY_PARAM_1, NAME_BODY_PARAM_2, NAME_BODY_PARAM_3 ],
         expectedValues = [ file1, file2, VALUE_BODY_PARAM_3 ];
-      let files = [];
-      Array.from( body.entries() ).forEach( ( [ key, value ] ) =>
+      let files: any[] = [];
+      debugger;
+      Array.from( body.entries() ).forEach( ( [ key, value ]: any ) =>
       {
         expectedKeys.splice( expectedKeys.findIndex( k => k === key ), 1 );
         files = [ ...expectedValues.splice( expectedValues.findIndex( v => v === value ), 1 ), ...files ];

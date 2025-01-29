@@ -8,8 +8,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "build:rest-client": "ng build ng-rest-client --configuration=production  && cd libs/ng-rest-client && npm run build && cd ../../ && npx jasmine dist/ng-rest-client/schematics/**/*.spec.js",
-    "build:material-phone-input": "ng build material-phone-input --configuration=production  && cd libs/material-phone-input && npm run build && cd ../../ && npx jasmine dist/ng-rest-client/schematics/**/*.spec.js"
+    "build:rest-client": "ng test ng-rest-client && ng build ng-rest-client && cd libs/ng-rest-client && npm run build:schematics && npx jasmine ../../dist/ng-rest-client/schematics/**/*.spec.js && cd ../../ && rm dist/ng-rest-client/schematics/**/*.spec.*",
+    "build:material-phone-input": "ng build material-phone-input --configuration=production  && cd libs/material-phone-input"
   },
   "private": true,
   "dependencies": {
@@ -60,7 +60,7 @@
     "karma-jasmine-html-reporter": "^1.6.0",
     "ng-packagr": "^16.2.3",
     "ts-node": "~8.8.2",
-    "typescript": "^5.7.3"
+    "typescript": "^4.9.5"
   },
   "engines": {
     "node": "^14.15.0 || >=16.10.0",

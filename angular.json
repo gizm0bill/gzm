@@ -27,7 +27,8 @@
             "karmaConfig": "libs/ng-rest-client/karma.conf.js",
             "include": [
               "libs/ng-rest-client/src/**/*.spec.ts"
-            ]
+            ],
+            "codeCoverage": true
           }
         },
         "lint": {

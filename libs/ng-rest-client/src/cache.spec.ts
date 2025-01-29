@@ -2,7 +2,7 @@ import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { AbstractRESTClient, Cache, GET, CacheClear } from '.';
-import { Observable } from 'rxjs';
+import { NEVER, Observable } from 'rxjs';
 import { Query } from './query';
 import { tap } from 'rxjs/operators';
 
@@ -24,13 +24,13 @@ describe( 'Cache', () =>
   class ApiClient extends AbstractRESTClient
   {
     @GET( CACHE_URL_UNTIL ) @Cache( CACHE_UNTIL )
-    testCacheUntil( @Query( 'some-arg' ) someArg: any ): Observable<any> { return; }
+    testCacheUntil( @Query( 'some-arg' ) someArg: any ): Observable<any> { return NEVER; }
 
     @CacheClear<ApiClient>( 'testCacheUntil' )
     clearCacheTestCacheUntil() { return this; }
 
     @GET( CACHE_URL_TIMES ) @Cache( `${CACHE_TIMES}times` )
-    testCacheTimes(): Observable<any> { return; }
+    testCacheTimes(): Observable<any> { return NEVER; }
 
     @CacheClear<ApiClient>( 'testCacheTimes' )
     clearCacheTestCacheTimes() { return this; }
@@ -39,7 +39,7 @@ describe( 'Cache', () =>
     shouldClearCacheTestCacheFunction() { return !( this.#testCacheFunctionCounter % CACHE_FUNCTION_TIMES ); }
 
     @GET( CACHE_URL_FUNCTION ) @Cache( ( thisArg: ApiClient ) => thisArg.shouldClearCacheTestCacheFunction() )
-    _testCacheFunction(): Observable<any> { return; }
+    _testCacheFunction(): Observable<any> { return NEVER; }
     testCacheFunction(): Observable<any> {
       return this._testCacheFunction().pipe( tap( () => this.#testCacheFunctionCounter++ ) );
     }

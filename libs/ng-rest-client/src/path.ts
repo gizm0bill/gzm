@@ -10,16 +10,22 @@ export const buildPathParams = ( target: AbstractRESTClient, targetKey: string |
   return requestUrl;
 };
 
+/**
+ * property decorator
+ *
+ * @param key - the name of the url parameter
+ * @param extraOptions
+ * @returns
+ */
 export const Path = ( key?: string, ...extraOptions: any[] ) =>
   ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
-      saveToKey = parameterIndex !== undefined ? propertyKey : undefined,
       metadataKey = MetadataKeys.Path,
-      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
+      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
 
     existingParams.push( parameterIndex !== undefined ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
-    Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
+    Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
   };
 
 export function getBaseUrl( thisArg: AbstractRESTClient, _target: AbstractRESTClient )
@@ -34,16 +40,18 @@ export function getBaseUrl( thisArg: AbstractRESTClient, _target: AbstractRESTCl
  * @param url - will use this exact string as BaseUrl, unless `configKey` is passed; function will be called with instance and must return Observable
  * @param configKey - will request `url` and get this key from the resulting json
  */
-export function BaseUrl( url: ( ( ...args: any[] ) => Observable<string> ) | string, configKey?: string )
+export const BaseUrl = <TClass extends AbstractRESTClient>( url: ( ( thisArg: TClass, ...args: any[] ) => Observable<string> ) | string, configKey?: string ) =>
 {
   return  <TClass extends DerivedAbstractRESTClient>( target: TClass ): void =>
   {
     const metadataKey = MetadataKeys.BaseUrl;
     let cached: Observable<any>;
     if ( typeof url !== 'function' )
-      Reflect.defineMetadata( metadataKey, !!configKey
-        ? ( { http }: { http: HttpClient } ) => !cached ? ( cached = http.get( url ).pipe( map( response => response[ configKey ] ) ) ) : cached
+      return Reflect.defineMetadata( metadataKey, !!configKey
+        ? ( { http }: { http: HttpClient } ) => !cached
+          ? ( cached = http.get<any>( url ).pipe( map( response => response[ configKey ] ) ) )
+          : cached
         : () => of( url ), target );
-    else Reflect.defineMetadata( metadataKey, url, target );
+    Reflect.defineMetadata( metadataKey, url, target );
   };
 }

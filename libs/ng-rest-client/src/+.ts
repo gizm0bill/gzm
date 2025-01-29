@@ -4,7 +4,7 @@ import 'reflect-metadata';
 
 export const isObject = ( item: unknown ) => ( item && typeof item === 'object' && !Array.isArray( item ) && item !== null );
 
-export const extend = <T, U>( target: T, source: U ): T & U =>
+export const extend = <T extends Record<string|number|symbol, any>, U extends Record<string|number|symbol, any>>( target: T, source: U ): T & U =>
 {
   if ( !isObject( target ) || !isObject( source ) ) return target as T & U;
   Object.keys( source ).forEach( key =>
@@ -26,19 +26,19 @@ export abstract class AbstractRESTClient
   protected http: HttpClient;
   constructor() { this.http = inject( HttpClient ); }
 }
-export type DerivedAbstractRESTClient = new ( ...args: unknown[] ) => AbstractRESTClient;
+export type DerivedAbstractRESTClient = new ( ...args: any[] ) => AbstractRESTClient;
 export type MethodNames<T> = { [K in keyof T]: T[K] extends Function ? K : never }[ keyof T ];
 
 // reflect metadata key symbols
 export const MetadataKeys =
 {
-  BaseUrl: Symbol( 'apiClient:BaseUrl' ),
-  Query: Symbol( 'apiClient:Query' ),
-  Path: Symbol( 'apiClient:Path' ),
-  Body: Symbol( 'apiClient:Body' ),
-  Header: Symbol( 'apiClient:Header' ),
-  Type: Symbol( 'apiClient:ResponseType' ),
-  Error: Symbol( 'apiClient:Error' ),
-  Cache: Symbol( 'apiClient:Cache' ),
-  ClearCache: Symbol( 'apiClient:ClearCache' ),
-};
+  BaseUrl: Symbol( 'RESTClient:BaseUrl' ),
+  Query: Symbol( 'RESTClient:Query' ),
+  Path: Symbol( 'RESTClient:Path' ),
+  Body: Symbol( 'RESTClient:Body' ),
+  Header: Symbol( 'RESTClient:Header' ),
+  Type: Symbol( 'RESTClient:ResponseType' ),
+  Error: Symbol( 'RESTClient:Error' ),
+  Cache: Symbol( 'RESTClient:Cache' ),
+  ClearCache: Symbol( 'RESTClient:ClearCache' ),
+} as const;

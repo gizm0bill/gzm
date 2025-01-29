@@ -18,7 +18,9 @@ describe( 'update', () => {
     const appModuleFile = appTree.files.find( file => file.endsWith( 'app.module.ts' ) );
     const appPath = appModuleFile?.replace( /\/app\.module\.ts$/, '' ).replace( new RegExp( `^${sep}` ), '' );
     appTree.create( `${appPath}/api.service.ts`, sys.readFile( sys.resolvePath( `${appPath}/api.service.ts` ) )! );
+    appTree.create( `${appPath}/auth.service.ts`, sys.readFile( sys.resolvePath( `${appPath}/auth.service.ts` ) )! );
     const tree = await runner.runSchematic( 'migration-v2', { }, appTree );
     expect( tree.readContent( `${appPath}/api.service.ts` ).replace(/\s+/g, ' ') ).toBe( sys.readFile( sys.resolvePath( `${appPath}/api.service.expected.ts` ) )!.replace(/\s+/g, ' ') );
+    expect( tree.readContent( `${appPath}/auth.service.ts` ).replace(/\s+/g, ' ') ).toBe( sys.readFile( sys.resolvePath( `${appPath}/auth.service.expected.ts` ) )!.replace(/\s+/g, ' ') );
   } );
 } );
