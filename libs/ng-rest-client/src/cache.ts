@@ -14,7 +14,7 @@ export interface ICacheOptions
   clearMethodPrefix: string; // TODO: remove
 }
 
-export const Cache = ( options?: number | string | ((thisArg: any) => boolean) | ICacheOptions ): MethodDecorator =>
+export const Cache = ( options?: number | string | ( ( thisArg: any ) => boolean ) | Partial<ICacheOptions> ): MethodDecorator =>
 {
   const cacheOptions: ICacheOptions = { clearMethodPrefix: 'clearCache' };
   switch ( true )
@@ -76,7 +76,7 @@ const getCacheKey =
 ) =>
 {
   const headerArr: string[] = [];
-  cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, (cacheHeaders?.getAll( name ) || []).join() ) );
+  cacheHeaders.keys().forEach( ( name ) => headerArr.push( name, ( cacheHeaders?.getAll( name ) || [] ).join() ) );
   return [ cacheUrl, headerArr.join(), cacheQuery.toString(), cacheResponseType ].join();
 };
 

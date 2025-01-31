@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { inject, TestBed } from '@angular/core/testing';
-import { BehaviorSubject, NEVER, Observable, throwError, zip } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError, zip } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { AbstractRESTClient, BaseUrl, Body, GET, HEAD, NO_ENCODE, Path, POST, Query, ResponseType, RESTClientError } from '.';
 import { standardEncoding } from './query';
@@ -51,11 +51,7 @@ describe( 'Common features', () =>
   class ApiClient extends AbstractRESTClient
   {
     uniqueTestKey = Math.random();
-    constructor
-    (
-      protected readonly http: HttpClient,
-      readonly mockService: MockService
-    ) { super(); }
+    constructor( readonly mockService: MockService ) { super(); }
 
     @POST( SOME_URL )
     testBody
@@ -103,7 +99,8 @@ describe( 'Common features', () =>
   @BaseUrl( CONFIG_JSON_VALUE )
   class ApiClientA extends AbstractRESTClient
   {
-    @HEAD( SOME_URL ) testBaseUrlA(): Observable<Response> { return NEVER; }
+    @HEAD( SOME_URL )
+    testBaseUrlA(): Observable<Response> { return NEVER; }
   }
 
   // get base url from some json path and extract value by provided key
@@ -137,7 +134,7 @@ describe( 'Common features', () =>
       providers:
       [
         MockService,
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( HttpClient ), TestBed.inject( MockService ) ) },
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( MockService ) ) },
         { provide: ApiClientA, useFactory: () => new ApiClientA() },
         { provide: ApiClientB, useFactory: () => new ApiClientB() },
         { provide: ApiClientC, useFactory: () => new ApiClientC( 'x' ) },
@@ -165,6 +162,7 @@ describe( 'Common features', () =>
     )
     httpTestingController.expectOne( () => true ).flush( '', { status: STATUS_NUMBER, statusText: STATUS_MESSAGE } );
 
+    // test type error
     try {
       ( apiClientA as any ).http = undefined;
       apiClientA.testBaseUrlA().subscribe();

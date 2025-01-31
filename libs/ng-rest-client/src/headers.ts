@@ -7,7 +7,7 @@ import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+
  * class decorator
  * method decorator
  */
-export function Headers( headers: {} )
+export const Headers = ( headers: {} ): ClassDecorator & MethodDecorator =>
 {
   function decorator <TClass extends DerivedAbstractRESTClient>( target: TClass ): void;
   function decorator( target: AbstractRESTClient, targetKey: string | symbol ): void;
@@ -32,7 +32,7 @@ export function Headers( headers: {} )
  * property decorator
  * parameter decorator
  */
-export function Header( key?: string )
+export const Header = ( key?: string ) =>
 {
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol ): void;
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;

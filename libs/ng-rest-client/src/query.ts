@@ -50,12 +50,12 @@ export const buildQueryParameters = <T extends AbstractRESTClient>( thisArg: T, 
         // eslint-disable-next-line no-unused-expressions
         args[ paramIndex ] && query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
-      default: // is of Object type, method query
+      default: // is of Object type, method query, not implemented yet
         Object.entries( queryDef ).forEach( ( [ queryKey, queryForm ]: [ string, ( () => void ) | any ] ) =>
         {
           switch ( true )
           {
-            case queryForm instanceof Observable: // is from property decorator
+            case queryForm instanceof Observable:
               query.push( queryForm.pipe( map( queryValue => ( { [ queryKey ]: queryValue } ) ) ) );
               break;
             case typeof queryForm === 'function':
@@ -86,7 +86,7 @@ export const buildQueryParameters = <T extends AbstractRESTClient>( thisArg: T, 
   );
 };
 
-
+// TODO: make available for property decorator as well
 export const Query = ( keyOrParams: any, ...extraOptions: any[] ): ClassDecorator & ParameterDecorator =>
 {
   function decorator <TClass extends DerivedAbstractRESTClient>( target: TClass ): void;
@@ -104,7 +104,7 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ): ClassDecorato
     const metadataKey = MetadataKeys.Query;
     const existingQuery: any[] = Reflect.getOwnMetadata( metadataKey, target ) || [];
     existingQuery.push( [ undefined, keyOrParams, ...extraOptions ] );
-    Reflect.defineMetadata( metadataKey, existingQuery, target );
+    return Reflect.defineMetadata( metadataKey, existingQuery, target );
   }
   return decorator;
 };

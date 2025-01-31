@@ -1,9 +1,8 @@
-import { TestBed, inject } from '@angular/core/testing';
-import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AbstractRESTClient, Headers, Header, HEAD } from '.';
-import { Observable, BehaviorSubject, of, NEVER } from 'rxjs';
+import { inject, TestBed } from '@angular/core/testing';
+import { BehaviorSubject, NEVER, Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { AbstractRESTClient, HEAD, Header, Headers } from '.';
 
 describe( 'Headers', () =>
 {

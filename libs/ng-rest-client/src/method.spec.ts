@@ -1,7 +1,7 @@
 import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed, inject } from '@angular/core/testing';
-import { NEVER, Observable } from 'rxjs';
+import { inject, TestBed } from '@angular/core/testing';
+import { NEVER } from 'rxjs';
 import { AbstractRESTClient, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT } from '.';
 
 describe( 'Methods', () =>

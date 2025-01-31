@@ -1,16 +1,17 @@
-import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
-import { AbstractRESTClient, Cache, GET, CacheClear } from '.';
+import { fakeAsync, inject, TestBed, tick } from '@angular/core/testing';
 import { NEVER, Observable } from 'rxjs';
-import { Query } from './query';
 import { tap } from 'rxjs/operators';
+import { AbstractRESTClient, Cache, CacheClear, GET } from '.';
+import { Query } from './query';
 
 describe( 'Cache', () =>
 {
   const
     CACHE_URL_UNTIL = 'test-get-cache-url-until',
     CACHE_URL_TIMES = 'test-get-cache-url-times',
+    CACHE_URL_UNTIL_TIMES = 'test-get-cache-url-until-times',
     CACHE_URL_FUNCTION = 'test-get-cache-url-function',
     CACHE_UNTIL = 100,
     CACHE_TIMES = 2,
@@ -34,6 +35,9 @@ describe( 'Cache', () =>
 
     @CacheClear<ApiClient>( 'testCacheTimes' )
     clearCacheTestCacheTimes() { return this; }
+
+    @GET( CACHE_URL_UNTIL_TIMES ) @Cache( { 'times': CACHE_FUNCTION_TIMES, 'until': CACHE_UNTIL } )
+    testCacheConfigObject(): Observable<any> { return NEVER; }
 
     #testCacheFunctionCounter = 0;
     shouldClearCacheTestCacheFunction() { return !( this.#testCacheFunctionCounter % CACHE_FUNCTION_TIMES ); }
@@ -62,11 +66,16 @@ describe( 'Cache', () =>
   {
     // should use cache
     apiClient.testCacheUntil( 1 ).subscribe( expectSomeTestData );
+    apiClient.testCacheConfigObject().subscribe( expectSomeTestData );
     tick( CACHE_UNTIL - 1 );
     apiClient.testCacheUntil( 1 ).subscribe( expectSomeTestData );
-    const requests1 = httpTestingController.match( `${CACHE_URL_UNTIL}?some-arg=1` );
-    expect( requests1.length ).toEqual( 1 );
-    requests1[0].flush( someTestData );
+    apiClient.testCacheConfigObject().subscribe( expectSomeTestData );
+    const request1 = httpTestingController.match( `${CACHE_URL_UNTIL}?some-arg=1` );
+    expect( request1.length ).toEqual( 1 );
+    const request2 = httpTestingController.match( CACHE_URL_UNTIL_TIMES );
+    expect( request2.length ).toEqual( 1 );
+    request1[0].flush( someTestData );
+    request2[0].flush( someTestData );
     // should reset cache
     tick( 1 );
     apiClient.testCacheUntil( 1 ).subscribe( expectSomeTestData );
