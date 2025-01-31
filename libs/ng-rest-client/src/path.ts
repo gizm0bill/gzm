@@ -3,10 +3,14 @@ import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AbstractRESTClient, DerivedAbstractRESTClient, MetadataKeys } from './+';
 
-export const buildPathParams = ( target: AbstractRESTClient, targetKey: string | symbol, args: any, requestUrl: string ) =>
+export const buildPathParams = <T extends AbstractRESTClient>( thisArg: T, target: AbstractRESTClient, targetKey: string | symbol, args: any, requestUrl: string ) =>
 {
-  const pathParams: any[] = ( Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey ) || [] ).filter( ( param: string ) => args[param[0]] !== undefined );
-  if ( pathParams.length ) pathParams.forEach( param => requestUrl = requestUrl.replace( `{${param[1]}}`, args[param[0]] ) );
+  const pathParams: any[] = ( Reflect.getOwnMetadata( MetadataKeys.Path, target, targetKey ) || [] ).filter( ( param: string ) => args[param[0]] != null );
+  const propertyParams = ( (Reflect.getOwnMetadata( MetadataKeys.Path, target ) as { [k: string]: keyof typeof thisArg }[] ) || []).reduce<string[][]>( ( pathValues, pathPropertyByKey ) => {
+    const [ pathKey, pathProperty ] = Object.entries( pathPropertyByKey )[0];
+    return [ ...pathValues, [ `${thisArg[pathProperty]}`, pathKey ] ];
+  }, [] );
+  [ ...pathParams, ...propertyParams].forEach( param => requestUrl = requestUrl.replace( `{${param[1]}}`, args[param[0]] ?? param[0] ) );
   return requestUrl;
 };
 
@@ -21,11 +25,12 @@ export const Path = ( key?: string, ...extraOptions: any[] ) =>
   ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
+      saveToKey = parameterIndex != null ? propertyKey : undefined as unknown as string,
       metadataKey = MetadataKeys.Path,
-      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ) || [];
+      existingParams: Object[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-    existingParams.push( parameterIndex !== undefined ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
-    Reflect.defineMetadata( metadataKey, existingParams, target, propertyKey );
+    existingParams.push( parameterIndex != null ? [ parameterIndex, key, ...extraOptions ] : { [ key || propertyKey ]: propertyKey, ...extraOptions } );
+    Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
   };
 
 export function getBaseUrl( thisArg: AbstractRESTClient, _target: AbstractRESTClient )
@@ -42,7 +47,7 @@ export function getBaseUrl( thisArg: AbstractRESTClient, _target: AbstractRESTCl
  */
 export const BaseUrl = <TClass extends AbstractRESTClient>( url: ( ( thisArg: TClass, ...args: any[] ) => Observable<string> ) | string, configKey?: string ) =>
 {
-  return  <TClass extends DerivedAbstractRESTClient>( target: TClass ): void =>
+  return <T extends DerivedAbstractRESTClient>( target: T ): void =>
   {
     const metadataKey = MetadataKeys.BaseUrl;
     let cached: Observable<any>;

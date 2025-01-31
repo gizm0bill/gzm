@@ -20,7 +20,7 @@ describe( 'Headers', () =>
     NAME_FOR_METHOD_2 = 'someOtherHeaderForMethod',
     VALUE_FOR_METHOD_2 = 'some-other-header-for-method',
     NAME_FOR_METHOD_3 = 'yetAnotherHeaderForMethod',
-    VALUE_FOR_METHOD_3 = 'yet-another-header-for-method',
+    VALUE_FOR_METHOD_3 = ['yet-another-header-for-method', 'yet-another-other-header-for-method'],
     NAME_PROPERTY_1 = 'xxx-someHeaderName',
     VALUE_PROPERTY_1 = 'xxx-some-header-value',
     NAME_PROPERTY_2 = 'someOtherHeaderProperty',
@@ -50,9 +50,10 @@ describe( 'Headers', () =>
   } )
   class ApiClient extends AbstractRESTClient
   {
+    headerValue = { [ NAME_CLASS_WIDE_1 ]: VALUE_CLASS_WIDE_1 };
+
     constructor
     (
-      protected readonly http: HttpClient,
       readonly mockService: MockService
     ) { super(); }
 
@@ -64,6 +65,7 @@ describe( 'Headers', () =>
 
     @HEAD( SOME_URL )
     // Header value from function at runtime for current method
+    @Headers( ( thisArg: ApiClient ) => thisArg.headerValue )
     @Headers( ( thisArg: ApiClient ) => thisArg.mockService.someOtherSubject.pipe( take( 1 ) ) )
     @Headers
     ( {
@@ -71,7 +73,19 @@ describe( 'Headers', () =>
       [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
     } )
-    testGet( @Header( NAME_PARAMETER_1 ) h1?: string, @Header( NAME_PARAMETER_1 ) h11?: string, @Header( NAME_PARAMETER_2 ) h2?: string ): Observable<any> { return NEVER; }
+    test( @Header( NAME_PARAMETER_1 ) h1?: string, @Header( NAME_PARAMETER_1 ) h11?: string, @Header( NAME_PARAMETER_2 ) h2?: string ): Observable<any> { return NEVER; }
+  }
+
+  class SimpleApiClient extends AbstractRESTClient
+  {
+    @HEAD( SOME_URL )
+    @Headers
+    ( {
+      [ NAME_FOR_METHOD_1 ]: () => of( VALUE_FOR_METHOD_1 ),
+      [ NAME_FOR_METHOD_2 ]: () => VALUE_FOR_METHOD_2,
+      [ NAME_FOR_METHOD_3 ]: VALUE_FOR_METHOD_3,
+    } )
+    test(): Observable<any> { return NEVER; }
   }
 
   beforeEach( () =>
@@ -82,11 +96,22 @@ describe( 'Headers', () =>
       providers:
       [
         MockService,
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( HttpClient ), TestBed.inject( MockService ) ) },
+        SimpleApiClient,
+        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( MockService ) ) },
       ]
     } );
     httpTestingController = TestBed.inject( HttpTestingController );
   } );
+
+  it ( 'should add simple headers', inject( [ SimpleApiClient ], ( apiClient: SimpleApiClient ) => {
+    apiClient.test().subscribe();
+    const request = httpTestingController.expectOne( SOME_URL );
+    const headers = request.request.headers;
+    expect( headers.getAll( NAME_FOR_METHOD_1 ) ).toEqual( [ VALUE_FOR_METHOD_1 ] );
+    expect( headers.getAll( NAME_FOR_METHOD_2 ) ).toEqual( [ VALUE_FOR_METHOD_2 ] );
+    expect( headers.getAll( NAME_FOR_METHOD_3 ) ).toEqual( VALUE_FOR_METHOD_3 );
+    request.flush( {} );
+  } ) );
 
   it( 'should get headers from all forms of definition', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
@@ -96,7 +121,7 @@ describe( 'Headers', () =>
       [ NAME_CLASS_WIDE_2 ]: VALUE_CLASS_WIDE_3
     } );
     mockService.singleValueSubject.next( [ VALUE_RANDOM_1, VALUE_RANDOM_2 ] );
-    apiClient.testGet( VALUE_PARAMETER_1, VALUE_PARAMETER_11, VALUE_PARAMETER_2 ).subscribe();
+    apiClient.test( VALUE_PARAMETER_1, VALUE_PARAMETER_11, VALUE_PARAMETER_2 ).subscribe();
 
     const request1 = httpTestingController.expectOne( ( { headers } ) =>
     {
@@ -118,8 +143,7 @@ describe( 'Headers', () =>
         expectHeaders5 = propertyHeaders2?.includes( VALUE_RANDOM_1 ) && propertyHeaders2.includes( VALUE_RANDOM_2 ),
         expectHeaders6 = parameterHeaders1?.includes( VALUE_PARAMETER_1 ) && parameterHeaders1.includes( VALUE_PARAMETER_11 ) && parameterHeaders2?.includes( VALUE_PARAMETER_2 );
       expect( true ).toBeTrue();
-      debugger
-      return !!(expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6);
+      return !!( expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6 );
     } );
     request1.flush( {} );
 
@@ -133,7 +157,7 @@ describe( 'Headers', () =>
       [ NAME_FOR_METHOD_1 ]: VALUE_FOR_METHOD_2,
       [ NAME_FOR_METHOD_2 ]: VALUE_FOR_METHOD_3,
     } );
-    apiClient.testGet().subscribe();
+    apiClient.test().subscribe();
     const request2 = httpTestingController.expectOne( ( { headers } ) =>
     {
       const
@@ -149,15 +173,15 @@ describe( 'Headers', () =>
         propertyHeaders1 = headers.getAll( NAME_PROPERTY_1 ),
 
         expectHeaders1 = allHeaders1?.includes( VALUE_FOR_METHOD_1 ) && allHeaders1.includes( VALUE_FOR_METHOD_2 ),
-        expectHeaders2 = allHeaders2?.includes( VALUE_FOR_METHOD_2 ) && allHeaders2.includes( VALUE_FOR_METHOD_3 ),
-        expectHeaders3 = allHeaders3?.includes( VALUE_FOR_METHOD_3 ),
+        expectHeaders2 = allHeaders2?.includes( VALUE_FOR_METHOD_2 ) && VALUE_FOR_METHOD_3.every( h => allHeaders2.includes( h ) ),
+        expectHeaders3 = allHeaders3?.every( h => VALUE_FOR_METHOD_3.includes( h ) ),
         expectHeaders4 = allHeaders4?.includes( VALUE_CLASS_WIDE_1 ) && allHeaders4.includes( VALUE_CLASS_WIDE_2 ),
         expectHeaders5 = allHeaders5?.includes( VALUE_CLASS_WIDE_3 ) && allHeaders5.includes( VALUE_CLASS_WIDE_2 ),
 
         // check old headers are not modified
         expectHeaders6 = propertyHeaders1?.includes( VALUE_PROPERTY_1 );
       expect( true ).toBeTrue();
-      return !!(expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6);
+      return !!( expectHasHeaders && expectHeaders1 && expectHeaders2 && expectHeaders3 && expectHeaders4 && expectHeaders5 && expectHeaders6 );
     } );
     request2.flush( {} );
   } ) );

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { AbstractApiClient, Error, Error as ApiError, GET, BaseUrl } from '@gzm/ng-rest-client';
+import { AbstractApiClient, Error, Error as ApiError, GET, BaseUrl, Type } from '@gzm/ng-rest-client';
 
 export const errorHandler = <T extends AbstractApiClient>( _a: T, error: HttpErrorResponse, _: any, caught: Observable<any> ): Observable<string> => throwError( () => error );
 
@@ -13,6 +13,9 @@ export const factory = (): any =>
   {
     @GET( '…' )
     smth(): Observable<HttpResponse<any>> { return; }
+
+    @POST( '…' ) @Type( 'blob' )
+    smth2(): Observable<HttpResponse<any>> { return; }
   }
   Error( errorHandler )( A );
   ApiError( errorHandler )( A );

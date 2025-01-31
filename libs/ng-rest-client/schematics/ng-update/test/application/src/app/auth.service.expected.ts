@@ -1,7 +1,8 @@
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { AbstractRESTClient, RESTClientError, RESTClientError as ApiError, POST, BaseUrl } from '@gzm/ng-rest-client';
 import { errorHandler } from 'some/where';
-import { Observable, throwError, of, NEVER } from 'rxjs';
+import { Observable, throwError, of, NEVER } from "rxjs";
+import { scan } from 'rxjs/operators';
 
 @RESTClientError( ( _apiService: AuthService, error: HttpErrorResponse ) => throwError( () => error ) )
 @ApiError( ( _apiService: AuthService, error: HttpErrorResponse ) => throwError( () => error ) )

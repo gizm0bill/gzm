@@ -21,23 +21,29 @@ describe( 'Methods', () =>
 
   let httpTestingController: HttpTestingController;
 
+  class X {
+    a?: number;
+  }
+
   class ApiClient extends AbstractRESTClient
   {
-    @GET( GET_URL ) testGet(): Observable<any> { return NEVER; }
+    @GET( GET_URL ) testGet() { return NEVER; }
 
-    @POST( POST_URL ) testPost(): Observable<any> { return NEVER; }
+    @POST( POST_URL ) testPost() { return NEVER; }
 
-    @PUT( PUT_URL ) testPut(): Observable<any> { return NEVER; }
+    @PUT( PUT_URL ) testPut() { return NEVER; }
 
-    @PATCH( PATCH_URL ) testPatch(): Observable<any> { return NEVER; }
+    @PATCH( PATCH_URL ) testPatch() { return NEVER; }
 
-    @JSONP( JSONP_URL ) testJsonp(): Observable<any> { return NEVER; }
+    @JSONP( JSONP_URL ) testJsonp() { return NEVER; }
 
-    @DELETE( DELETE_URL ) testDelete(): Observable<any> { return NEVER; }
+    @DELETE( DELETE_URL ) testDelete() { return NEVER; }
 
-    @HEAD( HEAD_URL ) testHead(): Observable<any> { return NEVER; }
+    @HEAD( HEAD_URL ) testHead() { return NEVER; }
 
-    @OPTIONS( OPTIONS_URL ) testOptions(): Observable<any> { return NEVER; }
+    @OPTIONS( OPTIONS_URL ) testOptions() { return NEVER; }
+
+    @HEAD() testBlank() { return NEVER; }
   }
 
   beforeEach( () =>
@@ -114,6 +120,14 @@ describe( 'Methods', () =>
     apiClient.testOptions().subscribe();
     const req = httpTestingController.expectOne( OPTIONS_URL );
     expect( req.request.method ).toEqual( 'OPTIONS' );
+    req.flush( null );
+  } ) );
+
+  it( 'should perform request with no url', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    apiClient.testBlank().subscribe();
+    const req = httpTestingController.expectOne( '' );
+    expect( req.request.method ).toEqual( 'HEAD' );
     req.flush( null );
   } ) );
 

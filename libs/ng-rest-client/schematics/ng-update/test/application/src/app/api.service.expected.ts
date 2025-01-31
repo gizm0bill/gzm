@@ -1,6 +1,6 @@
 import { NEVER } from 'rxjs';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { AbstractRESTClient, RESTClientError, RESTClientError as ApiError, GET, BaseUrl } from '@gzm/ng-rest-client';
+import { AbstractRESTClient, RESTClientError, RESTClientError as ApiError, GET, BaseUrl, ResponseType } from '@gzm/ng-rest-client';
 
 export const errorHandler = <T extends AbstractRESTClient>( _a: T, error: HttpErrorResponse, _: any, caught: Observable<any> ): Observable<string> => throwError( () => error );
 
@@ -14,6 +14,9 @@ export const factory = (): any =>
   {
     @GET( '…' )
     smth(): Observable<HttpResponse<any>> { return NEVER; }
+
+    @POST( '…' ) @ResponseType( 'blob' )
+    smth2(): Observable<HttpResponse<any>> { return NEVER; }
   }
   RESTClientError( errorHandler )( A );
   ApiError( errorHandler )( A );

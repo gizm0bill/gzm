@@ -46,7 +46,7 @@ export const buildQueryParameters = <T extends AbstractRESTClient>( thisArg: T, 
         const queryForm$ = queryDef.call( undefined, thisArg );
         query.push( ( !( queryForm$ instanceof Observable ) ? of( queryForm$ ) : queryForm$ ).pipe( map( data => [ data, ...extraOptions ] ) ) );
         break;
-      case paramIndex !== undefined: // parameter query
+      case paramIndex != null: // parameter query
         // eslint-disable-next-line no-unused-expressions
         args[ paramIndex ] && query.push( of( [ { [ queryDef ]: args[ paramIndex ] }, ...extraOptions ] ) );
         break;
@@ -76,9 +76,8 @@ export const buildQueryParameters = <T extends AbstractRESTClient>( thisArg: T, 
     (
       Object.entries( queryResult ).forEach( ( [ queryKey, queryValue ] ) =>
       {
-        queryValue = Array.isArray( queryValue )
-          ? queryValue.map( value => !extraOptions.includes( NO_ENCODE ) ? standardEncoding( value ) : value )
-          : [ !extraOptions.includes( NO_ENCODE ) ? standardEncoding( queryValue) : queryValue ];
+        if ( !Array.isArray( queryValue ) ) queryValue = [ queryValue ];
+        queryValue = queryValue.map( value => !extraOptions.includes( NO_ENCODE ) ? standardEncoding( value ) : value );
         if ( !extraOptions.includes( NO_ENCODE ) ) queryKey = standardEncoding( queryKey );
         queryObject[ queryKey ] = [ ...( queryObject[ queryKey ] || [] ), ...queryValue ];
       } ),
@@ -94,7 +93,7 @@ export const Query = ( keyOrParams: any, ...extraOptions: any[] ): ClassDecorato
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;
   function decorator( target: AbstractRESTClient, propertyKey?: string | symbol, parameterIndex?: number ): void
   {
-    if ( parameterIndex !== undefined ) // on param
+    if ( parameterIndex != null ) // on param
     {
       const metadataKey = MetadataKeys.Query;
       const existingParams: [ number, string, ...any[] ][] = Reflect.getOwnMetadata( metadataKey, target, propertyKey ?? '' ) || [];

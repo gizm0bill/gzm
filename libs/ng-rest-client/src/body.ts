@@ -6,7 +6,7 @@ export const buildBody = ( target: AbstractRESTClient, targetKey: string | symbo
       body: any = {};
   if ( bodyParams )
   {
-    bodyParams = bodyParams.filter( paramTuple => args[ paramTuple[0] ] !== undefined );
+    bodyParams = bodyParams.filter( paramTuple => args[ paramTuple[0] ] != undefined );
     // see if we got some Files inside
     if ( bodyParams.some( param => args[param[0]] instanceof File || args[param[0]] instanceof FileList ) )
     {
@@ -34,10 +34,10 @@ export const Body = ( key?: string, ...extraOptions: any[] ) =>
   ( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ) =>
   {
     const
-      saveToKey = parameterIndex !== undefined ? propertyKey : undefined as unknown as string,
+      saveToKey = parameterIndex != null ? propertyKey : undefined as unknown as string,
       metadataKey = MetadataKeys.Body,
       existingParams: any[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-    existingParams.push( parameterIndex !== undefined ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
+    existingParams.push( parameterIndex != null ? [ parameterIndex, key, ...extraOptions ] : { propertyKey, ...extraOptions } );
     Reflect.defineMetadata( metadataKey, existingParams, target, saveToKey );
   };

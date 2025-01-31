@@ -33,6 +33,7 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
     replacements = {
       AbstractApiClient: 'AbstractRESTClient',
       Error: 'RESTClientError',
+      Type: 'ResponseType',
       return: 'return NEVER',
     },
     replacementKeys = keys( replacements ),
@@ -71,8 +72,8 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
         ?.reduce( ( decorators, decorator ) => [ ...decorators, ( decorator.expression as CallExpression )?.expression ], [] as LeftHandSideExpression[] )
         .filter( Boolean ) || [];
       // also replace return statements if void
-      if ( currentDecoratorCalls.length && currentDecoratorCalls.filter( decorator => MethodNames.includes(decorator.getText() as typeof MethodNames[number]) ).length ) {
-        const [ returnStatement, _semicolon, ...rest ] = ( node.getChildren().find( child => isBlock(child) ) as Block)?.statements.find( statement => isReturnStatement(statement) )?.getChildren() || [];
+      if ( currentDecoratorCalls.length && currentDecoratorCalls.filter( decorator => MethodNames.includes( decorator.getText() as typeof MethodNames[number] ) ).length ) {
+        const [ returnStatement, _semicolon, ...rest ] = ( node.getChildren().find( child => isBlock( child ) ) as Block )?.statements.find( statement => isReturnStatement( statement ) )?.getChildren() || [];
         !rest.length && ( returnStatements = [ ...returnStatements, returnStatement ] );
       }
       decoratorCalls = [
@@ -103,7 +104,7 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
       // replace imports
 
       if ( !isImportDeclaration( node ) ) return;
-      if ( node.moduleSpecifier?.getFullText()?.match( /rxjs/ ) ) rxjsImportNode = node;
+      if ( node.moduleSpecifier?.getFullText()?.match( /rxjs('|")$/ ) ) rxjsImportNode = node;
       if ( !node.moduleSpecifier?.getFullText()?.match( /@gzm\/ng-rest-client/ ) ) return;
       node.importClause?.namedBindings?.forEachChild( specifier => {
         if ( !isImportSpecifier( specifier ) ) return;
@@ -116,10 +117,10 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
     // add NEVER import if not present
     if ( returnStatements ) {
       if ( !!rxjsImportNode ) {
-        const rxjsImportSyntaxList = (rxjsImportNode as unknown as ImportDeclaration)
-          .getChildren().find( child => isImportClause( child ))
+        const rxjsImportSyntaxList = ( rxjsImportNode as unknown as ImportDeclaration )
+          .getChildren().find( child => isImportClause( child ) )
           ?.getChildren().find( child => isNamedImports( child ) )
-          ?.getChildren().find( child => child.kind === SyntaxKind.SyntaxList);
+          ?.getChildren().find( child => child.kind === SyntaxKind.SyntaxList );
         !rxjsImportSyntaxList?.getChildren().find( child => child.getText() === 'NEVER' ) && recorder.insertRight( rxjsImportSyntaxList!.getEnd(), ', NEVER' );
       } else {
         recorder.insertLeft( sourceFile.getStart(), `import { NEVER } from 'rxjs';\n` );

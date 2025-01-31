@@ -14,7 +14,7 @@ export function Headers( headers: {} )
   function decorator( target: AbstractRESTClient, targetKey?: string | symbol ): void
   {
     const metadataKey = MetadataKeys.Header;
-    if ( targetKey !== undefined ) // method
+    if ( targetKey != null ) // method
     {
       const existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, targetKey ) || [];
       existingHeaders.push( headers );
@@ -38,13 +38,12 @@ export function Header( key?: string )
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex: number ): void;
   function decorator( target: AbstractRESTClient, propertyKey: string | symbol, parameterIndex?: number ): void
   {
-    // TODO: check constructor: typeof target === 'function'
     const
-      saveToKey = parameterIndex !== undefined ? propertyKey : undefined as unknown as string, // if no parameterIndex, it's a property header
+      saveToKey = parameterIndex != null ? propertyKey : undefined as unknown as string, // if no parameterIndex, it's a property header
       metadataKey = MetadataKeys.Header,
       existingHeaders: unknown[] = Reflect.getOwnMetadata( metadataKey, target, saveToKey ) || [];
 
-    existingHeaders.push( parameterIndex !== undefined ? [ parameterIndex, key ] : { [ key || propertyKey ]: propertyKey } );
+    existingHeaders.push( parameterIndex != null ? [ parameterIndex, key ] : { [ key || propertyKey ]: propertyKey } );
     Reflect.defineMetadata( metadataKey, existingHeaders, target, saveToKey );
   }
   return decorator;
@@ -64,7 +63,6 @@ export const buildHeaders = ( thisArg: AbstractRESTClient, target: any, targetKe
         return headerValues;
       } );
 
-  // TODO: defer
   [ ...propertyHeaders, ...classWideHeaders, ...methodHeaders ].forEach( ( headerDef: Function & Object & any[] ) =>
   {
     switch ( true )
