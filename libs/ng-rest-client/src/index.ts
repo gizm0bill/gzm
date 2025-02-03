@@ -76,6 +76,8 @@ export const DELETE = requestMethodDecoratorFactory( 'DELETE' );
 export const HEAD = requestMethodDecoratorFactory( 'HEAD' );
 export const OPTIONS = requestMethodDecoratorFactory( 'OPTIONS' );
 export const JSONP = requestMethodDecoratorFactory( 'JSONP' );
+export const TRACE = requestMethodDecoratorFactory( 'TRACE' );
+export const CONNECT = requestMethodDecoratorFactory( 'CONNECT' );
 
 export { AbstractRESTClient } from './+';
 export { Body } from './body';
