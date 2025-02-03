@@ -112,7 +112,7 @@ describe( 'Headers', () =>
     request.flush( {} );
   } ) );
 
-  it( 'should get headers from all forms of definition', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
+  it( 'should get headers from all types of definition', inject( [ ApiClient, MockService ], ( apiClient: ApiClient, mockService: MockService ) =>
   {
     mockService.someSubject.next
     ( {

@@ -2,7 +2,7 @@ import { HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { inject, TestBed } from '@angular/core/testing';
 import { NEVER } from 'rxjs';
-import { AbstractRESTClient, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT } from '.';
+import { AbstractRESTClient, CONNECT, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT, TRACE } from '.';
 
 describe( 'Methods', () =>
 {
@@ -14,7 +14,9 @@ describe( 'Methods', () =>
     DELETE_URL = 'test-delete-url',
     HEAD_URL = 'test-head-url',
     OPTIONS_URL = 'test-options-url',
-    JSONP_URL = 'test-options-url',
+    JSONP_URL = 'test-jsonp-url',
+    TRACE_URL = 'test-trace-url',
+    CONNECT_URL = 'test-connect-url',
 
     someTestData  = [ 'some', 'response' ],
     expectSomeTestData = ( { body }: HttpResponse<any> ) => expect( body ).toBe( someTestData );
@@ -42,6 +44,10 @@ describe( 'Methods', () =>
     @HEAD( HEAD_URL ) testHead() { return NEVER; }
 
     @OPTIONS( OPTIONS_URL ) testOptions() { return NEVER; }
+
+    @TRACE( TRACE_URL ) testTrace() { return NEVER; }
+
+    @CONNECT( CONNECT_URL ) testConnect() { return NEVER; }
 
     @HEAD() testBlank() { return NEVER; }
   }
@@ -120,6 +126,22 @@ describe( 'Methods', () =>
     apiClient.testOptions().subscribe();
     const req = httpTestingController.expectOne( OPTIONS_URL );
     expect( req.request.method ).toEqual( 'OPTIONS' );
+    req.flush( null );
+  } ) );
+
+  it( 'should perform TRACE request', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    apiClient.testTrace().subscribe();
+    const req = httpTestingController.expectOne( TRACE_URL );
+    expect( req.request.method ).toEqual( 'TRACE' );
+    req.flush( null );
+  } ) );
+
+  it( 'should perform CONNECT request', inject( [ ApiClient ], ( apiClient: ApiClient ) =>
+  {
+    apiClient.testConnect().subscribe();
+    const req = httpTestingController.expectOne( CONNECT_URL );
+    expect( req.request.method ).toEqual( 'CONNECT' );
     req.flush( null );
   } ) );
 
