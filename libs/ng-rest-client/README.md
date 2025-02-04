@@ -1,5 +1,8 @@
 # Angular REST Client
 
+[![npm version](https://badge.fury.io/js/@gzm%2Fng-rest-client.svg)](https://badge.fury.io/js/@gzm%2Fng-rest-client)
+[![tests](https://github.com/gizm0bill/gzm/actions/workflows/ng-rest-client-test.yml/badge.svg)](https://github.com/gizm0bill/gzm/actions/workflows/ng-rest-client-test.yml/badge.svg)
+
 ## Overview
 The library provides a set of decorators for simplifying HTTP requests in Angular applications. It enables developers to define RESTful API clients using decorators for common HTTP methods.
 

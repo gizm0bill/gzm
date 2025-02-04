@@ -1,17 +1,13 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "2.0.0-alpha.9",
-  "dependencies": {
-    "tslib": "^2.0.0"
-  },
+  "version": "2.0.0",
   "peerDependencies": {
-    "@angular/common": "^16",
-    "@angular/core": "^16",
-    "typescript": "^4",
-    "reflect-metadata": "^0.1.13"
+    "@angular/common": "15 - 19",
+    "@angular/core": "15 - 19",
+    "typescript": "4 - 5",
+    "reflect-metadata": "1 - 2"
   },
   "description": "Angular REST Client utility library",
-  "main": "index.js",
   "scripts": {
     "build:schematics": "tsc -p tsconfig.schematics.json && cp schematics/*.json ../../dist/ng-rest-client/schematics/"
   },
@@ -23,7 +19,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gizm0bill/gzm/tree/master/libs/ng-rest-client/src"
+    "url": "https://github.com/gizm0bill/gzm.git",
+    "directory": "libs/ng-rest-client"
   },
   "keywords": [
     "Angular",
@@ -31,5 +28,6 @@
   ],
   "author": "gizm0bill@gmail.com",
   "license": "MIT",
-  "schematics": "./schematics/collection.json"
+  "schematics": "./schematics/collection.json",
+  "readme": "README.md"
 }
