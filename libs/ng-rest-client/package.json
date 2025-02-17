@@ -1,11 +1,11 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "peerDependencies": {
     "@angular/common": "15 - 19",
     "@angular/core": "15 - 19",
     "typescript": "4 - 5",
-    "reflect-metadata": "1 - 2"
+    "reflect-metadata": "0.1 - 0.2"
   },
   "description": "Angular REST Client utility library",
   "scripts": {
