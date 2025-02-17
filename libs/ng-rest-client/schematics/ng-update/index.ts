@@ -56,8 +56,6 @@ export const updateToV2 = () => async ( tree: Tree, { logger }: SchematicContext
       rxjsImportNode: Node|undefined = undefined;
 
     const gatherPossibleReplacements = ( node: Node ) => {
-      // isMethodDeclaration( node ) && node.getChildren().filter( child => child.kind === SyntaxKind.SyntaxList )
-        // .find( child => child.getChildren().find( grandchild => isDecorator(grandchild) ) )?.
       // gather decorator calls (decorators called as a function), check later if has imports
       decoratorCalls = [
         ...decoratorCalls,
@@ -155,10 +153,8 @@ const forEachProjectFile = async ( tree: Tree, logger: LoggerApi, updateFunction
     sourceFiles.forEach( sourceFile => {
       if ( seen.has( sourceFile.fileName ) ) return;
       const recorder = tree.beginUpdate( sourceFile.fileName.replace( new RegExp( `^${program.getCurrentDirectory()}` ), '' ).replace( new RegExp( `^${sep}` ), '' ) );
-      // console.log( `beginUpdate: ${sourceFile.fileName}`);
       if ( !( updateFunction( sourceFile, recorder ) ).length ) return;
       tree.commitUpdate( recorder );
-      // console.log( `endUpdate: ${sourceFile.fileName}`);
       seen.add( sourceFile.fileName );
     } );
   } ) );
