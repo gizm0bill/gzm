@@ -1,10 +1,11 @@
-import { HttpResponse } from '@angular/common/http';
-import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
+import { HttpResponse, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { fakeAsync, inject, TestBed, tick } from '@angular/core/testing';
 import { NEVER, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AbstractRESTClient, Cache, CacheClear, GET } from '.';
 import { Query } from './query';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe( 'Cache', () =>
 {
@@ -51,15 +52,15 @@ describe( 'Cache', () =>
 
   beforeEach( () =>
   {
-    TestBed.configureTestingModule
-    ( {
-      imports: [ HttpClientTestingModule ],
-      providers:
-      [
+    TestBed.configureTestingModule( {
+      providers: [
         { provide: ApiClient, useFactory: () => new ApiClient() },
-      ]
+        provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     } );
-    httpTestingController = TestBed.inject( HttpTestingController );
+    httpTestingController = TestBed.inject(HttpTestingController);
   } );
 
   it( 'should cache for the specified amount of time', fakeAsync( inject( [ApiClient], ( apiClient: ApiClient ) =>

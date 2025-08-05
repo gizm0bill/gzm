@@ -2,7 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { Country } from './country.model';
 
-@Pipe({ name: 'search' })
+@Pipe({
+    name: 'search',
+    standalone: false
+})
 export class SearchPipe implements PipeTransform {
   // country | search:'searchCriteria'
   transform(country: Country, searchCriteria?: string): boolean {

@@ -1,5 +1,5 @@
-import { HttpResponse } from '@angular/common/http';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { inject, TestBed } from '@angular/core/testing';
 import { NEVER } from 'rxjs';
 import { AbstractRESTClient, CONNECT, DELETE, GET, HEAD, JSONP, OPTIONS, PATCH, POST, PUT, TRACE } from '.';
@@ -56,12 +56,13 @@ describe( 'Methods', () =>
   {
     TestBed.configureTestingModule
     ( {
-      imports: [ HttpClientTestingModule ],
-      providers:
-      [
+    imports: [],
+    providers: [
         { provide: ApiClient, useFactory: () => new ApiClient() },
-      ]
-    } );
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+} );
     httpTestingController = TestBed.inject( HttpTestingController );
   } );
 

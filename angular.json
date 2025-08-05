@@ -10,25 +10,22 @@
       "prefix": "ng-rest-client",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "builder": "@angular/build:ng-packagr",
           "options": {
             "tsConfig": "libs/ng-rest-client/tsconfig.lib.json",
             "project": "libs/ng-rest-client/ng-package.json"
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "@angular/build:karma",
           "options": {
+            "tsConfig": "libs/ng-rest-client/tsconfig.spec.json",
+            "browsers": "Chrome",
             "polyfills": [
               "zone.js",
               "zone.js/testing"
             ],
-            "tsConfig": "libs/ng-rest-client/tsconfig.spec.json",
-            "karmaConfig": "libs/ng-rest-client/karma.conf.js",
-            "include": [
-              "libs/ng-rest-client/src/**/*.spec.ts"
-            ],
-            "codeCoverage": true
+            "karmaConfig": "libs/ng-rest-client/karma.conf.js"
           }
         },
         "lint": {
@@ -54,11 +51,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/ng-rest-client-demo",
+            "outputPath": {
+              "base": "dist/ng-rest-client-demo"
+            },
             "index": "demos/ng-rest-client/src/index.html",
-            "main": "demos/ng-rest-client/src/main.ts",
             "polyfills": [
               "zone.js"
             ],
@@ -71,7 +69,8 @@
             "styles": [
               "demos/ng-rest-client/src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "browser": "demos/ng-rest-client/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -90,9 +89,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -101,21 +98,21 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "ng-rest-client-demo:build:production"
+              "buildTarget": "ng-rest-client-demo:build:production"
             },
             "development": {
-              "browserTarget": "ng-rest-client-demo:build:development"
+              "buildTarget": "ng-rest-client-demo:build:development"
             }
           },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "builder": "@angular/build:extract-i18n",
           "options": {
-            "browserTarget": "ng-rest-client-demo:build"
+            "buildTarget": "ng-rest-client-demo:build"
           }
         }
       }
@@ -127,10 +124,10 @@
       "prefix": "lib",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "builder": "@angular/build:ng-packagr",
           "options": {
             "project": "demos/ng-rest-client/ng-package.json",
-            "tsConfig": "demos/ng-rest-client/lib/tsconfig.lib.json"
+            "tsConfig": "demos/ng-rest-client/tsconfig.lib.json"
           }
         }
       }
@@ -142,7 +139,7 @@
       "prefix": "mat-phone-input",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "builder": "@angular/build:ng-packagr",
           "options": {
             "tsConfig": "libs/material-phone-input/tsconfig.lib.json",
             "project": "libs/material-phone-input/ng-package.json"
@@ -154,7 +151,7 @@
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "@angular/build:karma",
           "options": {
             "polyfills": [
               "zone.js",
@@ -184,5 +181,31 @@
     "schematicCollections": [
       "@angular-eslint/schematics"
     ]
+  },
+  "schematics": {
+    "@schematics/angular:component": {
+      "type": "component"
+    },
+    "@schematics/angular:directive": {
+      "type": "directive"
+    },
+    "@schematics/angular:service": {
+      "type": "service"
+    },
+    "@schematics/angular:guard": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:interceptor": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:module": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:pipe": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:resolver": {
+      "typeSeparator": "."
+    }
   }
 }

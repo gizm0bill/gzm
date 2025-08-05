@@ -1,8 +1,9 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { inject, TestBed } from '@angular/core/testing';
 import { BehaviorSubject, NEVER, Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { AbstractRESTClient, HEAD, Header, Headers } from '.';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe( 'Headers', () =>
 {
@@ -91,14 +92,15 @@ describe( 'Headers', () =>
   {
     TestBed.configureTestingModule
     ( {
-      imports: [ HttpClientTestingModule ],
-      providers:
-      [
+    imports: [],
+    providers: [
         MockService,
         SimpleApiClient,
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( MockService ) ) },
-      ]
-    } );
+        { provide: ApiClient, useFactory: () => new ApiClient(TestBed.inject(MockService)) },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+} );
     httpTestingController = TestBed.inject( HttpTestingController );
   } );
 
