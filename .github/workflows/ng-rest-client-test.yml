@@ -8,12 +8,10 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v3
@@ -23,3 +21,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
       - run: ./node_modules/.bin/ng test ng-rest-client --watch=false --browsers=ChromeHeadless --code-coverage
+      - run: cd libs/ng-rest-client && npm run build:schematics && npx jasmine ../../dist/ng-rest-client/schematics/**/*.spec.js
+

@@ -1,9 +1,9 @@
 {
   "name": "@gzm/ng-rest-client",
-  "version": "2.0.1",
+  "version": "2.1.0-beta.0",
   "peerDependencies": {
-    "@angular/common": "15 - 19",
-    "@angular/core": "15 - 19",
+    "@angular/common": "15 - 20",
+    "@angular/core": "15 - 20",
     "typescript": "4 - 5",
     "reflect-metadata": "0.1 - 0.2"
   },

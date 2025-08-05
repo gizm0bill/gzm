@@ -5,76 +5,85 @@
     [matMenuTriggerFor]="menu"
     class="country-selector"
     [disabled]="disabled"
-  >
+    >
     <span
       class="country-selector-flag flag"
       [ngClass]="selectedCountry?.flagClass"
     ></span>
-    <span class="country-selector-code" *ngIf="selectedCountry?.dialCode"
-    >+{{ selectedCountry?.dialCode }}</span
-    >
-  </button>
-  <mat-menu #menu="matMenu"
-            class="ngx-mat-tel-input-mat-menu-panel"
-            backdropClass="ngx-mat-tel-input-overlay-backdrop"
-            overlayPanelClass="ngx-mat-tel-input-overlay-pane">
-    <input
-      *ngIf="enableSearch"
-      class="country-search"
-      [(ngModel)]="searchCriteria"
-      type="text"
-      [placeholder]="searchPlaceholder"
-      (click)="$event.stopPropagation()"
-    />
-    <ng-container *ngIf="!searchCriteria">
-      <button
-        type="button"
-        mat-menu-item
-        class="country-list-button"
-        *ngFor="let country of preferredCountriesInDropDown"
-        (click)="onCountrySelect(country, focusable)"
-      >
-        <div class="icon-wrapper">
-          <div class="flag" [ngClass]="country.flagClass"></div>
-        </div>
-        <div class="label-wrapper">
-          {{ country.name }}
-          <span *ngIf="country?.dialCode">+{{ country.dialCode }}</span>
-        </div>
-      </button>
-      <mat-divider *ngIf="preferredCountriesInDropDown?.length"></mat-divider>
-    </ng-container>
-    <ng-container *ngFor="let country of allCountries">
-      <button
-        type="button"
-        mat-menu-item
-        class="country-list-button"
-        *ngIf="country | search: searchCriteria"
-        (click)="onCountrySelect(country, focusable)"
-      >
-        <div class="icon-wrapper">
-          <div class="flag" [ngClass]="country.flagClass"></div>
-        </div>
-        <div class="label-wrapper">
-          {{ country.name }} +{{ country.dialCode }}
-        </div>
-      </button>
-    </ng-container>
-  </mat-menu>
+    @if (selectedCountry?.dialCode) {
+      <span class="country-selector-code"
+        >+{{ selectedCountry?.dialCode }}</span
+        >
+      }
+    </button>
+    <mat-menu #menu="matMenu"
+      class="ngx-mat-tel-input-mat-menu-panel"
+      backdropClass="ngx-mat-tel-input-overlay-backdrop"
+      overlayPanelClass="ngx-mat-tel-input-overlay-pane">
+      @if (enableSearch) {
+        <input
+          class="country-search"
+          [(ngModel)]="searchCriteria"
+          type="text"
+          [placeholder]="searchPlaceholder"
+          (click)="$event.stopPropagation()"
+          />
+      }
+      @if (!searchCriteria) {
+        @for (country of preferredCountriesInDropDown; track country) {
+          <button
+            type="button"
+            mat-menu-item
+            class="country-list-button"
+            (click)="onCountrySelect(country, focusable)"
+            >
+            <div class="icon-wrapper">
+              <div class="flag" [ngClass]="country.flagClass"></div>
+            </div>
+            <div class="label-wrapper">
+              {{ country.name }}
+              @if (country?.dialCode) {
+                <span>+{{ country.dialCode }}</span>
+              }
+            </div>
+          </button>
+        }
+        @if (preferredCountriesInDropDown?.length) {
+          <mat-divider></mat-divider>
+        }
+      }
+      @for (country of allCountries; track country) {
+        @if (country | search: searchCriteria) {
+          <button
+            type="button"
+            mat-menu-item
+            class="country-list-button"
+            (click)="onCountrySelect(country, focusable)"
+            >
+            <div class="icon-wrapper">
+              <div class="flag" [ngClass]="country.flagClass"></div>
+            </div>
+            <div class="label-wrapper">
+              {{ country.name }} +{{ country.dialCode }}
+            </div>
+          </button>
+        }
+      }
+    </mat-menu>
 
-  <input
-    matInput
-    type="tel"
-    autocomplete="tel"
-    [ngClass]="cssClass"
-    (blur)="onTouched()"
-    (keypress)="onInputKeyPress($event)"
-    [(ngModel)]="phoneNumber"
-    (ngModelChange)="onPhoneNumberChange()"
-    [errorStateMatcher]="errorStateMatcher"
-    [placeholder]="inputPlaceholder"
-    [disabled]="disabled"
-    [aria-describedby]="describedBy"
-    #focusable
-  />
-</div>
+    <input
+      matInput
+      type="tel"
+      autocomplete="tel"
+      [ngClass]="cssClass"
+      (blur)="onTouched()"
+      (keypress)="onInputKeyPress($event)"
+      [(ngModel)]="phoneNumber"
+      (ngModelChange)="onPhoneNumberChange()"
+      [errorStateMatcher]="errorStateMatcher"
+      [placeholder]="inputPlaceholder"
+      [disabled]="disabled"
+      [aria-describedby]="describedBy"
+      #focusable
+      />
+  </div>

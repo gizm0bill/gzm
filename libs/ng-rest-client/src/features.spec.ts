@@ -1,5 +1,5 @@
-import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClient, HttpErrorResponse, HttpRequest, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { inject, TestBed } from '@angular/core/testing';
 import { BehaviorSubject, NEVER, Observable, of, throwError, zip } from 'rxjs';
 import { map, take } from 'rxjs/operators';
@@ -130,16 +130,17 @@ describe( 'Common features', () =>
   {
     TestBed.configureTestingModule
     ( {
-      imports: [ HttpClientTestingModule ],
-      providers:
-      [
+    imports: [],
+    providers: [
         MockService,
-        { provide: ApiClient, useFactory: () => new ApiClient( TestBed.inject( MockService ) ) },
+        { provide: ApiClient, useFactory: () => new ApiClient(TestBed.inject(MockService)) },
         { provide: ApiClientA, useFactory: () => new ApiClientA() },
         { provide: ApiClientB, useFactory: () => new ApiClientB() },
-        { provide: ApiClientC, useFactory: () => new ApiClientC( 'x' ) },
-      ]
-    } );
+        { provide: ApiClientC, useFactory: () => new ApiClientC('x') },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+} );
     httpTestingController = TestBed.inject( HttpTestingController );
   } );
 

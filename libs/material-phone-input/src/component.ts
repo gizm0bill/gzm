@@ -28,15 +28,16 @@ declare type CanUpdateErrorStateCtor = _Constructor<CanUpdateErrorState> & _Abst
 const _NgxMatIntlTelInputMixinBase: CanUpdateErrorStateCtor & typeof NgxMatIntlTelInputBase = mixinErrorState( NgxMatIntlTelInputBase );
 
 @Component( {
-  selector: 'mat-phone-input',
-  templateUrl: './component.html',
-  styleUrls: ['./component.scss'],
-  providers: [
-    CountryCode,
-    { provide: MatFormFieldControl, useExisting: MaterialPhoneInputComponent },
-    { provide: NG_VALIDATORS, useValue: phoneNumberValidator, multi: true },
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'mat-phone-input',
+    templateUrl: './component.html',
+    styleUrls: ['./component.scss'],
+    providers: [
+        CountryCode,
+        { provide: MatFormFieldControl, useExisting: MaterialPhoneInputComponent },
+        { provide: NG_VALIDATORS, useValue: phoneNumberValidator, multi: true },
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 } )
 export class MaterialPhoneInputComponent extends _NgxMatIntlTelInputMixinBase implements OnInit, OnDestroy, DoCheck, CanUpdateErrorState, MatFormFieldControl<any>
 {
